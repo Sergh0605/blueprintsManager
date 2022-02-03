@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+    <changeSet id="DBInitialization-1" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <tableExists tableName="bpm_project"/>
+            </not>
+        </preConditions>
+        <createTable tableName="bpm_project">
+            <column autoIncrement="true" name="id" type="bigint">
+                <constraints primaryKey="true" primaryKeyName="pk_project"/>
+            </column>
+            <column name="name" type="text">
+                <constraints nullable="true"/>
+            </column>
+            <column name="object_name" type="text">
+                <constraints nullable="true"/>
+            </column>
+            <column name="object_address" type="text">
+                <constraints nullable="true"/>
+            </column>
+            <column name="release_date" type="date">
+                <constraints nullable="true"/>
+            </column>
+            <column name="volume_number" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="subname" type="text">
+                <constraints nullable="true"/>
+            </column>
+            <column name="code" type="varchar(30)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="designer_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="supervisor_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="chief_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="controller_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="company_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="stage_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="reassembly_required" type="boolean">
+                <constraints nullable="false"/>
+            </column>
+            <column name="edit_time" type="timestamp">
+                <constraints nullable="true"/>
+            </column>
+            <column name="project_in_pdf" type="bytea">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="DBInitialization-2" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <tableExists tableName="bpm_document"/>
+            </not>
+        </preConditions>
+        <createTable tableName="bpm_document">
+            <column autoIncrement="true" name="id" type="bigint">
+                <constraints primaryKey="true" primaryKeyName="pk_document"/>
+            </column>
+            <column name="project_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="number_in_project" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="varchar(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="designer_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="supervisor_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="content_in_pdf" type="bytea">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reassembly_required" type="boolean">
+                <constraints nullable="false"/>
+            </column>
+            <column name="edit_time" type="timestamp">
+                <constraints nullable="true"/>
+            </column>
+            <column name="document_in_pdf" type="bytea">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="DBInitialization-2" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <tableExists tableName="bpm_company"/>
+            </not>
+        </preConditions>
+        <createTable tableName="bpm_company">
+            <column autoIncrement="true" name="id" type="bigint">
+                <constraints primaryKey="true" primaryKeyName="pk_company"/>
+            </column>
+            <column name="name" type="varchar(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="signer_position" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="signer_name" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="logo" type="bytea">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="DBInitialization-3" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <tableExists tableName="bpm_user"/>
+            </not>
+        </preConditions>
+        <createTable tableName="bpm_user">
+            <column autoIncrement="true" name="id" type="bigint">
+                <constraints primaryKey="true" primaryKeyName="pk_user"/>
+            </column>
+            <column name="last_name" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="login" type="varchar(20)">
+                <constraints nullable="true" unique="true"/>
+            </column>
+            <column name="password" type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="company_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="signature" type="bytea">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="DBInitialization-3" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <tableExists tableName="bpm_stage"/>
+            </not>
+        </preConditions>
+        <createTable tableName="bpm_stage">
+            <column autoIncrement="true" name="id" type="bigint">
+                <constraints primaryKey="true" primaryKeyName="pk_user"/>
+            </column>
+            <column name="name" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code" type="varchar(3)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="DBInitialization-3" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <tableExists tableName="bpm_comment"/>
+            </not>
+        </preConditions>
+        <createTable tableName="bpm_comment">
+            <column autoIncrement="true" name="id" type="bigint">
+                <constraints primaryKey="true" primaryKeyName="pk_user"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="project_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="document_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="content" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="publication_time" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="DBInitialization-4" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_user_company"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_user"
+                                 baseColumnNames="company_id"
+                                 constraintName="fk_user_company"
+                                 referencedTableName="bpm_company"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-5" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_project_designer"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_project"
+                                 baseColumnNames="designer_id"
+                                 constraintName="fk_project_designer"
+                                 referencedTableName="bpm_user"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-6" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_project_supervisor"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_project"
+                                 baseColumnNames="supervisor_id"
+                                 constraintName="fk_project_supervisor"
+                                 referencedTableName="bpm_user"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-7" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_project_chief"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_project"
+                                 baseColumnNames="chief_id"
+                                 constraintName="fk_project_chief"
+                                 referencedTableName="bpm_user"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-8" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_project_controller"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_project"
+                                 baseColumnNames="controller_id"
+                                 constraintName="fk_project_controller"
+                                 referencedTableName="bpm_user"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-8" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_project_controller"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_project"
+                                 baseColumnNames="controller_id"
+                                 constraintName="fk_project_controller"
+                                 referencedTableName="bpm_user"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-9" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_project_company"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_project"
+                                 baseColumnNames="company_id"
+                                 constraintName="fk_project_company"
+                                 referencedTableName="bpm_company"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+</databaseChangeLog>
