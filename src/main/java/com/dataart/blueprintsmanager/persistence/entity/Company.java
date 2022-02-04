@@ -1,4 +1,4 @@
-package persistence.entity;
+package com.dataart.blueprintsmanager.persistence.entity;
 
 import lombok.*;
 

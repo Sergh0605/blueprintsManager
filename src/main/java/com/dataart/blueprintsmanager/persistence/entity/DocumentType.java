@@ -1,6 +1,6 @@
-package persistence.entity;
+package com.dataart.blueprintsmanager.persistence.entity;
 
-import exceptions.NotFoundCustomApplicationException;
+import com.dataart.blueprintsmanager.exceptions.NotFoundCustomApplicationException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
