@@ -109,7 +109,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="DBInitialization-2" author="S.Puzakov">
+    <changeSet id="DBInitialization-3" author="S.Puzakov">
         <preConditions onFail="WARN">
             <not>
                 <tableExists tableName="bpm_company"/>
@@ -134,7 +134,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="DBInitialization-3" author="S.Puzakov">
+    <changeSet id="DBInitialization-4" author="S.Puzakov">
         <preConditions onFail="WARN">
             <not>
                 <tableExists tableName="bpm_user"/>
@@ -162,7 +162,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="DBInitialization-3" author="S.Puzakov">
+    <changeSet id="DBInitialization-5" author="S.Puzakov">
         <preConditions onFail="WARN">
             <not>
                 <tableExists tableName="bpm_stage"/>
@@ -170,7 +170,7 @@
         </preConditions>
         <createTable tableName="bpm_stage">
             <column autoIncrement="true" name="id" type="bigint">
-                <constraints primaryKey="true" primaryKeyName="pk_user"/>
+                <constraints primaryKey="true" primaryKeyName="pk_stage"/>
             </column>
             <column name="name" type="varchar(100)">
                 <constraints nullable="false"/>
@@ -181,7 +181,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="DBInitialization-3" author="S.Puzakov">
+    <changeSet id="DBInitialization-6" author="S.Puzakov">
         <preConditions onFail="WARN">
             <not>
                 <tableExists tableName="bpm_comment"/>
@@ -189,7 +189,7 @@
         </preConditions>
         <createTable tableName="bpm_comment">
             <column autoIncrement="true" name="id" type="bigint">
-                <constraints primaryKey="true" primaryKeyName="pk_user"/>
+                <constraints primaryKey="true" primaryKeyName="pk_comment"/>
             </column>
             <column name="user_id" type="bigint">
                 <constraints nullable="false"/>
@@ -209,7 +209,32 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="DBInitialization-4" author="S.Puzakov">
+    <changeSet id="DBInitialization-7" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <tableExists tableName="bpm_document_type"/>
+            </not>
+        </preConditions>
+        <createTable tableName="bpm_document_type">
+            <column autoIncrement="true" name="id" type="bigint">
+                <constraints primaryKey="true" primaryKeyName="pk_document_type"/>
+            </column>
+            <column name="name" type="varchar(30)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="code" type="varchar(5)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="first_page_template" type="bytea">
+                <constraints nullable="true"/>
+            </column>
+            <column name="general_page_template" type="bytea">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="DBInitialization-8" author="S.Puzakov">
         <preConditions onFail="WARN">
             <not>
                 <foreignKeyConstraintExists foreignKeyName="fk_user_company"/>
@@ -222,7 +247,7 @@
                                  referencedColumnNames="id"/>
     </changeSet>
 
-    <changeSet id="DBInitialization-5" author="S.Puzakov">
+    <changeSet id="DBInitialization-9" author="S.Puzakov">
         <preConditions onFail="WARN">
             <not>
                 <foreignKeyConstraintExists foreignKeyName="fk_project_designer"/>
@@ -235,7 +260,7 @@
                                  referencedColumnNames="id"/>
     </changeSet>
 
-    <changeSet id="DBInitialization-6" author="S.Puzakov">
+    <changeSet id="DBInitialization-10" author="S.Puzakov">
         <preConditions onFail="WARN">
             <not>
                 <foreignKeyConstraintExists foreignKeyName="fk_project_supervisor"/>
@@ -248,7 +273,7 @@
                                  referencedColumnNames="id"/>
     </changeSet>
 
-    <changeSet id="DBInitialization-7" author="S.Puzakov">
+    <changeSet id="DBInitialization-11" author="S.Puzakov">
         <preConditions onFail="WARN">
             <not>
                 <foreignKeyConstraintExists foreignKeyName="fk_project_chief"/>
@@ -261,7 +286,7 @@
                                  referencedColumnNames="id"/>
     </changeSet>
 
-    <changeSet id="DBInitialization-8" author="S.Puzakov">
+    <changeSet id="DBInitialization-12" author="S.Puzakov">
         <preConditions onFail="WARN">
             <not>
                 <foreignKeyConstraintExists foreignKeyName="fk_project_controller"/>
@@ -274,20 +299,7 @@
                                  referencedColumnNames="id"/>
     </changeSet>
 
-    <changeSet id="DBInitialization-8" author="S.Puzakov">
-        <preConditions onFail="WARN">
-            <not>
-                <foreignKeyConstraintExists foreignKeyName="fk_project_controller"/>
-            </not>
-        </preConditions>
-        <addForeignKeyConstraint baseTableName="bpm_project"
-                                 baseColumnNames="controller_id"
-                                 constraintName="fk_project_controller"
-                                 referencedTableName="bpm_user"
-                                 referencedColumnNames="id"/>
-    </changeSet>
-
-    <changeSet id="DBInitialization-9" author="S.Puzakov">
+    <changeSet id="DBInitialization-13" author="S.Puzakov">
         <preConditions onFail="WARN">
             <not>
                 <foreignKeyConstraintExists foreignKeyName="fk_project_company"/>
@@ -297,6 +309,110 @@
                                  baseColumnNames="company_id"
                                  constraintName="fk_project_company"
                                  referencedTableName="bpm_company"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-14" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_project_stage"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_project"
+                                 baseColumnNames="stage_id"
+                                 constraintName="fk_project_stage"
+                                 referencedTableName="bpm_stage"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-15" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_document_project"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_document"
+                                 baseColumnNames="project_id"
+                                 constraintName="fk_document_project"
+                                 referencedTableName="bpm_project"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-16" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_document_designer"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_document"
+                                 baseColumnNames="designer_id"
+                                 constraintName="fk_document_designer"
+                                 referencedTableName="bpm_user"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-17" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_document_supervisor"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_document"
+                                 baseColumnNames="supervisor_id"
+                                 constraintName="fk_document_supervisor"
+                                 referencedTableName="bpm_user"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-18" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_document_type"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_document"
+                                 baseColumnNames="type_id"
+                                 constraintName="fk_document_type"
+                                 referencedTableName="bpm_document_type"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-19" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_comment_user"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_comment"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_comment_user"
+                                 referencedTableName="bpm_user"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-20" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_comment_project"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_comment"
+                                 baseColumnNames="project_id"
+                                 constraintName="fk_comment_project"
+                                 referencedTableName="bpm_project"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DBInitialization-21" author="S.Puzakov">
+        <preConditions onFail="WARN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_comment_document"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="bpm_comment"
+                                 baseColumnNames="document_id"
+                                 constraintName="fk_comment_document"
+                                 referencedTableName="bpm_document"
                                  referencedColumnNames="id"/>
     </changeSet>
 </databaseChangeLog>
