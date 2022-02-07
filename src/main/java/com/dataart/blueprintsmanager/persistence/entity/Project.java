@@ -1,32 +1,33 @@
 package com.dataart.blueprintsmanager.persistence.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Builder
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode
+@Data
 public class Project {
-    Long id;
-    String name;
-    String objectName;
-    String objectAddress;
-    LocalDate releaseDate;
-    Integer volumeNumber;
-    String volumeName;
-    String code;
-    User designerId;
-    User supervisorId;
-    User chiefId;
-    User controllerId;
-    Company company;
-    Stage stage;
-    boolean reassemblyRequired;
-    byte[] projectInPdf;
-    Date editTime;
+    private Long id;
+    private String name;
+    private String objectName;
+    private String objectAddress;
+    private LocalDate releaseDate;
+    private Integer volumeNumber;
+    private String volumeName;
+    private String code;
+    private User designerId;
+    private User supervisorId;
+    private User chiefId;
+    private User controllerId;
+    private Company company;
+    private Stage stage;
+    private Boolean reassemblyRequired;
+    private byte[] projectInPdf;
+    private LocalDateTime editTime;
 }

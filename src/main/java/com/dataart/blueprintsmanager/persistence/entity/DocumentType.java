@@ -18,6 +18,9 @@ public enum DocumentType {
     private final Long id;
 
     public static DocumentType getById(Long id) {
-        return Stream.of(values()).filter(t -> t.getId().equals(id)).findFirst().orElseThrow(() -> new NotFoundCustomApplicationException(String.format("DocumentType with id = [%d] not found", id)));
+        return Stream.of(values())
+                .filter(t -> t.getId().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundCustomApplicationException(String.format("DocumentType with id = [%d] not found", id)));
     }
 }

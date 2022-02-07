@@ -1,18 +1,19 @@
 package com.dataart.blueprintsmanager.persistence.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Builder
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode
+@Data
 public class User {
-    Long id;
-    String lastName;
-    String login;
-    String password;
-    Company company;
-    byte[] signature;
+    private Long id;
+    private String lastName;
+    private String login;
+    private String password;
+    private Company company;
+    private byte[] signature;
 }

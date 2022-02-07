@@ -1,15 +1,16 @@
 package com.dataart.blueprintsmanager.persistence.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Builder
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode
+@Data
 public class Stage {
-    Long id;
-    String name;
-    String code;
+    private Long id;
+    private String name;
+    private String code;
 }

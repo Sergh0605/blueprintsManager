@@ -1,20 +1,21 @@
 package com.dataart.blueprintsmanager.persistence.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Builder
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode
+@Data
 public class Comment {
     private Long id;
     private User user;
     private Project project;
     private Document document;
     private String text;
-    private Date publicationDate;
+    private LocalDateTime publicationDateTime;
 }

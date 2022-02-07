@@ -1,13 +1,14 @@
 package com.dataart.blueprintsmanager.persistence.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Builder
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode
+@Data
 public class Document {
     private Long id;
     private Project project;
@@ -17,7 +18,7 @@ public class Document {
     private User designer;
     private User supervisor;
     private byte[] contentInPdf;
-    private boolean reassemblyRequired;
+    private Boolean reassemblyRequired;
     private byte[] documentInPdf;
 
 }

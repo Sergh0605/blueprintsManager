@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+    <changeSet id="DB_change_timetype_in_project" author="S.Puzakov">
+        <modifyDataType tableName="bpm_project" columnName="edit_time" newDataType="timestamptz"/>
+    </changeSet>
+
+    <changeSet id="DB_change_timetype_in_document" author="S.Puzakov">
+        <modifyDataType tableName="bpm_document" columnName="edit_time" newDataType="timestamptz"/>
+    </changeSet>
+
+    <changeSet id="DB_change_timetype_in_comment" author="S.Puzakov">
+        <modifyDataType tableName="bpm_comment" columnName="publication_time" newDataType="timestamptz"/>
+    </changeSet>
+
+    <changeSet id="DB_add_deleted_in_project" author="S.Puzakov">
+        <addColumn tableName="bpm_project">
+            <column name="deleted" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="DB_add_deleted_in_document" author="S.Puzakov">
+        <addColumn tableName="bpm_document">
+            <column name="deleted" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="DB_add_deleted_in_company" author="S.Puzakov">
+        <addColumn tableName="bpm_company">
+            <column name="deleted" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="DB_add_deleted_in_user" author="S.Puzakov">
+        <addColumn tableName="bpm_user">
+            <column name="deleted" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="DB_add_deleted_in_comment" author="S.Puzakov">
+        <addColumn tableName="bpm_comment">
+            <column name="deleted" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="DB_setDefault_for_project_reassembly" author="S.Puzakov">
+        <addDefaultValue tableName="bpm_project" columnName="reassembly_required" defaultValueBoolean="true"/>
+    </changeSet>
+
+    <changeSet id="DB_setDefault_for_document_reassembly" author="S.Puzakov">
+        <addDefaultValue tableName="bpm_document" columnName="reassembly_required" defaultValueBoolean="true"/>
+    </changeSet>
+</databaseChangeLog>
