@@ -11,11 +11,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class Comment {
+public class CommentEntity {
     private Long id;
-    private User user;
-    private Project project;
-    private Document document;
+    private UserEntity user;
+    private ProjectEntity project;
+    private DocumentEntity document;
     private String text;
     private LocalDateTime publicationDateTime;
 }

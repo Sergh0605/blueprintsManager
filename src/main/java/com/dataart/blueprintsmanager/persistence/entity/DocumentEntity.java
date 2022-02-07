@@ -9,14 +9,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class Document {
+public class DocumentEntity {
     private Long id;
-    private Project project;
+    private ProjectEntity project;
     private DocumentType documentType;
     private String name;
     private String code;
-    private User designer;
-    private User supervisor;
+    private UserEntity designer;
+    private UserEntity supervisor;
     private byte[] contentInPdf;
     private Boolean reassemblyRequired;
     private byte[] documentInPdf;

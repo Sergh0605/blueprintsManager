@@ -9,10 +9,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class Company {
+public class UserEntity {
     private Long id;
-    private String name;
-    private String signerPosition;
-    private String signerName;
-    private byte[] logo;
+    private String lastName;
+    private String login;
+    private String password;
+    private CompanyEntity company;
+    private byte[] signature;
 }

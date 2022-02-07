@@ -1,4 +1,4 @@
-package com.dataart.blueprintsmanager.persistence.entity;
+package com.dataart.blueprintsmanager.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,11 +9,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class User {
+public class UserDto {
     private Long id;
-    private String lastName;
+    private String name;
     private String login;
-    private String password;
-    private Company company;
-    private byte[] signature;
+    private String companyName;
+    private boolean signUploaded;
+
 }

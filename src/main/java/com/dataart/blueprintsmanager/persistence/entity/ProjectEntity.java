@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class Project {
+public class ProjectEntity {
     private Long id;
     private String name;
     private String objectName;
@@ -21,12 +21,12 @@ public class Project {
     private Integer volumeNumber;
     private String volumeName;
     private String code;
-    private User designerId;
-    private User supervisorId;
-    private User chiefId;
-    private User controllerId;
-    private Company company;
-    private Stage stage;
+    private UserEntity designer;
+    private UserEntity supervisor;
+    private UserEntity chief;
+    private UserEntity controller;
+    private CompanyEntity company;
+    private StageEntity stage;
     private Boolean reassemblyRequired;
     private byte[] projectInPdf;
     private LocalDateTime editTime;

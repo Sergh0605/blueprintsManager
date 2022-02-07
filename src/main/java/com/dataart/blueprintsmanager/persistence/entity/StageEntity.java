@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class Stage {
+public class StageEntity {
     private Long id;
     private String name;
     private String code;

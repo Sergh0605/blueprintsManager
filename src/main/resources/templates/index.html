@@ -1,0 +1,59 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>BlueprintsManager</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous">
+
+</head>
+<body>
+<div class="row row-no-gutters">
+    <table id="table" class="table table-striped table-condensed">
+        <tbody>
+        <tr align="center">
+            <td><a href="/index">PROJECTS</a></td>
+            <td><a href="/company">COMPANIES</a></td>
+            <td><a href="/user">USERS</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div style="padding-left: 5%; padding-right: 5%">
+    <h1>Projects list</h1>
+    <table id="table-content" class="table table-striped">
+        <tbody>
+        <tr>
+            <td><a>CODE</a></td>
+            <td><a>NAME</a></td>
+            <td><a>EXECUTOR</a></td>
+            <td><a>EDIT TIME</a></td>
+            <td><a>REASSEMBLING REQUIRED</a></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr th:each="project : ${projects}">
+            <td><a th:text="${project.getCode()}"></a></td>
+            <td><a th:text="${project.getName()}"></a></td>
+            <td><a th:text="${project.getCompanyName()}"></a></td>
+            <td><a th:text="${project.getEditTimeWithFormat()}"></a></td>
+            <td><a th:text="${project.getReassemblyRequired()}"></a></td>
+            <td><a th:href="@{'~/project/' + ${project.getId()}}">EDIT</a></td>
+            <td><a th:href="@{'~/project/assemble/' + ${project.getId()}}">ASSEMBLE</a></td>
+            <td><a th:href="@{'~/project/download/' + ${project.getId()}}">DOWNLOAD</a></td>
+            <td><a th:href="@{'~/project/delete/' + ${project.getId()}}">DELETE</a></td>
+        </tr>
+        </tbody>
+    </table>
+
+
+
+
+</div>
+</body>
+</html>
