@@ -23,6 +23,7 @@
     </table>
 </div>
 <div style="padding-left: 5%; padding-right: 5%">
+    <h1><a th:href="@{'~/project/new2'}">CREATE NEW PROJECT</a></h1>
     <h1>Projects list</h1>
     <table id="table-content" class="table table-striped">
         <tbody>
@@ -30,6 +31,7 @@
             <td><a>CODE</a></td>
             <td><a>NAME</a></td>
             <td><a>EXECUTOR</a></td>
+            <td><a>STAGE CODE</a></td>
             <td><a>EDIT TIME</a></td>
             <td><a>REASSEMBLING REQUIRED</a></td>
             <td></td>
@@ -41,6 +43,7 @@
             <td><a th:text="${project.getCode()}"></a></td>
             <td><a th:text="${project.getName()}"></a></td>
             <td><a th:text="${project.getCompanyName()}"></a></td>
+            <td><a th:text="${project.getStageCode()}"></a></td>
             <td><a th:text="${project.getEditTimeWithFormat()}"></a></td>
             <td><a th:text="${project.getReassemblyRequired()}"></a></td>
             <td><a th:href="@{'~/project/' + ${project.getId()}}">EDIT</a></td>
@@ -50,10 +53,6 @@
         </tr>
         </tbody>
     </table>
-
-
-
-
 </div>
 </body>
 </html>

@@ -1,0 +1,45 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>BlueprintsManager</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous">
+
+</head>
+<body>
+<div class="row row-no-gutters">
+    <table id="table" class="table table-striped table-condensed">
+        <tbody>
+        <tr align="center">
+            <td><a href="/index">PROJECTS</a></td>
+            <td><a href="/company">COMPANIES</a></td>
+            <td><a href="/user">USERS</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div style="padding-left: 5%; padding-right: 5%">
+    <h1>Company list</h1>
+    <table id="table-content" class="table table-striped">
+        <tbody>
+        <tr>
+            <td><a>NAME</a></td>
+            <td><a>SIGNER POSITION</a></td>
+            <td><a>SIGNER NAME</a></td>
+            <td><a>LOGO</a></td>
+        </tr>
+        <tr th:each="company : ${companies}">
+            <td><a th:text="${company.getName()}"></a></td>
+            <td><a th:text="${company.getSignerPosition()}"></a></td>
+            <td><a th:text="${company.getSignerName()}"></a></td>
+            <td><a th:text="${company.isHasLogo()}"></a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
