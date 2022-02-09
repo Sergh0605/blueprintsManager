@@ -31,7 +31,9 @@ public class ProjectService {
                 collect(Collectors.toList());
     }
 
-    public ProjectDto getNew() {
-        return ProjectDto.getEmpty();
+    public ProjectDto getById(Long projectId) {
+        if (projectId == 0) { return ProjectDto.getEmpty();}
+        ProjectEntity project = projectRepository.fetchById(projectId);
+        return new ProjectDto(project);
     }
 }

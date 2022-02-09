@@ -25,7 +25,6 @@ public class CompanyDto {
             this.signerName = company.getSignerName();
             if (company.getLogo() != null && company.getLogo().length > 0) hasLogo = true;
         }
-
     }
 }
 

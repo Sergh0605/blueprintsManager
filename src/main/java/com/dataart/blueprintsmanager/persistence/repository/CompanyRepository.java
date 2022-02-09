@@ -47,5 +47,33 @@ public class CompanyRepository {
             throw new DataBaseCustomApplicationException("Database connection error.");
         }
     }
+
+    public CompanyEntity findById(Long id) {
+        String getCompanyByIdSql =
+                "SELECT *" +
+                        "FROM bpm_company " +
+                        "WHERE deleted = 'false' AND  id = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(getCompanyByIdSql)) {
+            pstmt.setLong(1, id);
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                if (resultSet.next()) {
+                    return CompanyEntity.builder()
+                            .id(resultSet.getLong("id"))
+                            .name(resultSet.getString("name"))
+                            .signerPosition(resultSet.getString("signer_position"))
+                            .signerName(resultSet.getString("signer_name"))
+                            .logo(resultSet.getBytes("logo"))
+                            .build();
+                }
+                String message = String.format("Company with id= %d not found", id);
+                log.debug(message);
+                throw new DataBaseCustomApplicationException(message);
+            }
+        } catch (SQLException e) {
+            log.debug(e.getMessage());
+            throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
 }
 

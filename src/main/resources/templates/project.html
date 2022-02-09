@@ -25,82 +25,122 @@
 <div style="padding-left: 5%; padding-right: 5%">
     <h1 th:text="'PROJECT ' + ${project.getCode()}"></h1>
     <h4 th:text="'Last edit at ' + ${project.getEditTimeWithFormat()}"></h4>
-    <p th:if="${project.getReassemblyRequired() == true}" class="alert alert-danger" th:text="'REASSEMBLY REQUIRED'"></p>
+    <p th:if="${project.getReassemblyRequired() == true}" class="alert alert-danger"
+       th:text="'REASSEMBLY REQUIRED'"></p>
 
     <form method="post" th:action="@{/project/save}" th:object="${project}">
         <div>
             <label>Company Executor</label>
-            <select th:type="number" th:name="companyId" th:onchange= "'window.location.href = \'' + @{'~/project/new/'} + '\' + this.value ' ">
-                <!--<option value="" disabled hidden>Please Choose Company</option>-->
-                <option th:each="company : ${companies}" th:value="${company.getId()}" th:text="${company.getName()}" th:selected="${selectedCompany}"></option>
+            <select th:if="${project.getId() == 0}" th:type="number" th:field="*{companyId}"
+                    th:onchange="'window.location.href = \'' + @{'~/project/' + ${project.getId()} + '/'} + '\' + this.value ' ">
+                <option th:value="${project.getCompanyId()}" disabled th:selected="${project.getCompanyId() == 0}"
+                        hidden>Please Choose Company
+                </option>
+                <option th:each="company : ${companies}" th:value="${company.getId()}" th:text="${company.getName()}"
+                        th:selected="${company.getId() == project.getCompanyId()}"></option>
             </select>
+            <label th:if="${project.getId() > 0}" th:text = "${project.getCompanyId()}"></label>
         </div>
-        <div>
-            <label>Designer</label>
-            <select th:type="number" th:name="designerId">
-                <option th:each="user : ${users}" th:value="${user.getId}" th:text="${user.getName()}"></option>
-            </select>
-        </div>
-        <div>
-            <label>Name:</label>
-            <input type="text" th:field="*{name}" th:placeholder="*{getName()}" />
-        </div>
-        <div>
-            <label>Code:</label>
-            <input type="text" th:field="*{code}" th:placeholder="*{getCode()}" />
-        </div>
-        <div>
-            <label>Object Name:</label>
-            <input type="text" th:field="*{objectName}" th:placeholder="*{getObjectName()}" />
-        </div>
-        <div>
-            <label>Object Address:</label>
-            <input type="text" th:field="*{objectAddress}" th:placeholder="*{getObjectAddress()}" />
-        </div>
-        <div>
-            <label>Release Date:</label>
-            <input type="date" th:field="*{releaseDate}" th:placeholder="*{getReleaseDate()}" />
-        </div>
-        <div>
-            <label>Volume Number:</label>
-            <input type="number" th:field="*{volumeNumber}" th:placeholder="*{getVolumeNumber()}" />
-        </div>
-        <div>
-            <label>Volume Name:</label>
-            <input type="text" th:field="*{volumeName}" th:placeholder="*{getVolumeName()}" />
-        </div>
+        <div th:if="${project.getCompanyId() > 0}">
+            <div>
+                <label>Designer</label>
+                <select th:type="number" th:field="*{designerId}">
+                    <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
+                            th:selected="${user.getId() == project.getDesignerId()}"></option>
+                </select>
+            </div>
+            <div>
+                <label>Supervisor</label>
+                <select th:type="number" th:field="*{supervisorId}">
+                    <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
+                            th:selected="${user.getId() == project.getSupervisorId()}"></option>
+                </select>
+            </div>
+            <div>
+                <label>Chief Engineer</label>
+                <select th:type="number" th:field="*{chiefId}">
+                    <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
+                            th:selected="${user.getId() == project.getChiefId()}"></option>
+                </select>
+            </div>
+            <div>
+                <label>Controller</label>
+                <select th:type="number" th:field="*{chiefId}">
+                    <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
+                            th:selected="${user.getId() == project.getControllerId()}"></option>
+                </select>
+            </div>
+            <div>
+                <label>Project Stage</label>
+                <select th:type="number" th:field="*{stageId}">
+                    <option th:each="stage : ${stages}" th:value="${stage.getId()}" th:text="${stage.getName()}"
+                            th:selected="${stage.getId() == project.getStageId()}"></option>
+                </select>
+            </div>
+            <div>
+                <label>Project Name:</label>
+                <input th:disabled="${true}" type="text" th:field="*{name}" th:placeholder="*{getName()}"/>
+            </div>
+            <div>
+                <label>Project Code:</label>
+                <input type="text" th:field="*{code}" th:placeholder="*{getCode()}"/>
+            </div>
+            <div>
+                <label>Object Name:</label>
+                <input type="text" th:field="*{objectName}" th:placeholder="*{getObjectName()}"/>
+            </div>
+            <div>
+                <label>Object Address:</label>
+                <input type="text" th:field="*{objectAddress}" th:placeholder="*{getObjectAddress()}"/>
+            </div>
+            <div>
+                <label>Release Date:</label>
+                <input type="date" th:field="*{releaseDate}" th:placeholder="*{getReleaseDate().toString()}"/>
+            </div>
+            <div>
+                <label>Volume Number:</label>
+                <input type="number" th:field="*{volumeNumber}" th:placeholder="*{getVolumeNumber()}"/>
+            </div>
+            <div>
+                <label>Volume Name:</label>
+                <input type="text" th:field="*{volumeName}" th:placeholder="*{getVolumeName()}"/>
+            </div>
 
-        <input type="submit" value="Submit"/>
+            <button type="submit" class="btn btn-primary">SAVE</button>
+        </div>
     </form>
+    <div th:if="${project.getId() > 0}">
+        <h1><a th:href="@{'~/project/assemble/' + ${project.getId()}}">REASSEMBLE PROJECT</a></h1>
+        <h1><a th:href="@{'~/document/new/' + ${project.getId()}}">ADD NEW DOCUMENT</a></h1>
+        <h1>Documents list</h1>
+        <table id="table-content" class="table table-striped">
+            <tbody>
+            <tr>
+                <td><a>CODE</a></td>
+                <td><a>NAME</a></td>
+                <td><a>DESIGNER</a></td>
+                <td><a>EDIT TIME</a></td>
+                <td><a>REASSEMBLING REQUIRED</a></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr th:each="document : ${documents}">
+                <td><a th:text="${document.getCode()}"></a></td>
+                <td><a th:text="${document.getName()}"></a></td>
+                <td><a th:text="${document.getDesignerName}"></a></td>
+                <td><a th:text="${document.getEditTimeWithFormat()}"></a></td>
+                <td><a th:text="${document.getReassemblyRequired()}"></a></td>
+                <td><a th:href="@{'~/document/' + ${document.getId()}}">EDIT</a></td>
+                <td><a th:href="@{'~/document/assemble/' + ${document.getId()}}">ASSEMBLE</a></td>
+                <td><a th:href="@{'~/document/download/' + ${project.getId()}}">DOWNLOAD</a></td>
+                <td><a th:href="@{'~/document/delete/' + ${project.getId()}}">DELETE</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 
-<!--    <h1><a th:if="${project.getId() ne null}" th:href="@{'~/document/new'}">ADD NEW DOCUMENT</a></h1>
-    <h1>Documents list</h1>
-    <table id="table-content" class="table table-striped">
-        <tbody>
-        <tr>
-            <td><a>CODE</a></td>
-            <td><a>NAME</a></td>
-            <td><a>DESIGNER</a></td>
-            <td><a>EDIT TIME</a></td>
-            <td><a>REASSEMBLING REQUIRED</a></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-        <tr th:each="document : ${documents}">
-            <td><a th:text="${document.getCode()}"></a></td>
-            <td><a th:text="${document.getName()}"></a></td>
-            <td><a th:text="${document.getDesignerName}"></a></td>
-            <td><a th:text="${document.getEditTimeWithFormat()}"></a></td>
-            <td><a th:text="${document.getReassemblyRequired()}"></a></td>
-            <td><a th:href="@{'~/document/' + ${document.getId()}}">EDIT</a></td>
-            <td><a th:href="@{'~/document/assemble/' + ${document.getId()}}">ASSEMBLE</a></td>
-            <td><a th:href="@{'~/document/download/' + ${project.getId()}}">DOWNLOAD</a></td>
-            <td><a th:href="@{'~/document/delete/' + ${project.getId()}}">DELETE</a></td>
-        </tr>
-        </tbody>
-    </table>-->
 </div>
 </body>
 </html>

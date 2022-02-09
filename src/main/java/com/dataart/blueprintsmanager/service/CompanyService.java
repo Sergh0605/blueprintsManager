@@ -24,6 +24,11 @@ public class CompanyService {
         return toDtoListConverter(companyEntities);
     }
 
+    public CompanyDto fetchById(Long id) {
+        CompanyEntity company = companyRepository.findById(id);
+        return new CompanyDto(company);
+    }
+
     private List<CompanyDto> toDtoListConverter(List<CompanyEntity> companyEntities) {
         return companyEntities.stream().
                 filter(Objects::nonNull).

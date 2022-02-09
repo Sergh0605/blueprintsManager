@@ -18,7 +18,7 @@ public class ProjectEntity {
     private String objectName;
     private String objectAddress;
     private LocalDate releaseDate;
-    private Integer volumeNumber;
+    private Long volumeNumber;
     private String volumeName;
     private String code;
     private UserEntity designer;

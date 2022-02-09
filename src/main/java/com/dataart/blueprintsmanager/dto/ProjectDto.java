@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,8 +26,11 @@ public class ProjectDto {
     private String name;
     private String objectName;
     private String objectAddress;
+
+    @DateTimeFormat(pattern="yyyy-MM-dd")
     private LocalDate releaseDate;
-    private Integer volumeNumber;
+
+    private Long volumeNumber;
     private String volumeName;
     private String code;
     private String designerName;
@@ -60,6 +64,12 @@ public class ProjectDto {
             this.controllerName = Optional.ofNullable(project.getController()).map(UserEntity::getLastName).orElse("");
             this.companyName = Optional.ofNullable(project.getCompany()).map(CompanyEntity::getName).orElse("");
             this.stageCode = Optional.ofNullable(project.getStage()).map(StageEntity::getCode).orElse("");
+            this.designerId = Optional.ofNullable(project.getDesigner()).map(UserEntity::getId).orElse(0L);
+            this.supervisorId = Optional.ofNullable(project.getSupervisor()).map(UserEntity::getId).orElse(0L);
+            this.chiefId = Optional.ofNullable(project.getChief()).map(UserEntity::getId).orElse(0L);
+            this.controllerId = Optional.ofNullable(project.getController()).map(UserEntity::getId).orElse(0L);
+            this.companyId = Optional.ofNullable(project.getCompany()).map(CompanyEntity::getId).orElse(0L);
+            this.stageId = Optional.ofNullable(project.getStage()).map(StageEntity::getId).orElse(0L);
             this.reassemblyRequired = project.getReassemblyRequired();
             this.editTime = project.getEditTime();
         }
@@ -71,12 +81,12 @@ public class ProjectDto {
 
     public static ProjectDto getEmpty(){
         return ProjectDto.builder()
-                .id(null)
+                .id(0L)
                 .name("")
                 .objectName("")
                 .objectAddress("")
                 .releaseDate(LocalDate.now())
-                .volumeNumber(1)
+                .volumeNumber(1L)
                 .volumeName("")
                 .code("NEW")
                 .designerName("")
