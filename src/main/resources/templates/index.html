@@ -1,6 +1,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:th="http://www.thymeleaf.org"
->
+ lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <title>BlueprintsManager</title>
@@ -23,7 +23,7 @@
     </table>
 </div>
 <div style="padding-left: 5%; padding-right: 5%">
-    <h1><a th:href="@{'~/project/0'}">CREATE NEW PROJECT</a></h1>
+    <h1><a th:href="@{'~/project/new'}">CREATE NEW PROJECT</a></h1>
     <h1>Projects list</h1>
     <table id="table-content" class="table table-striped">
         <tbody>
@@ -46,7 +46,7 @@
             <td><a th:text="${project.getStageCode()}"></a></td>
             <td><a th:text="${project.getEditTimeWithFormat()}"></a></td>
             <td><a th:text="${project.getReassemblyRequired()}"></a></td>
-            <td><a th:href="@{'~/project/' + ${project.getId()}}">EDIT</a></td>
+            <td><a th:href="@{'~/project/view/' + ${project.getId()}}">EDIT</a></td>
             <td><a th:href="@{'~/project/assemble/' + ${project.getId()}}">ASSEMBLE</a></td>
             <td><a th:href="@{'~/project/download/' + ${project.getId()}}">DOWNLOAD</a></td>
             <td><a th:href="@{'~/project/delete/' + ${project.getId()}}">DELETE</a></td>

@@ -1,6 +1,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:th="http://www.thymeleaf.org"
->
+ lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <title>BlueprintsManager</title>
@@ -31,85 +31,94 @@
     <form method="post" th:action="@{/project/save}" th:object="${project}">
         <div>
             <label>Company Executor</label>
-            <select th:if="${project.getId() == 0}" th:type="number" th:field="*{companyId}"
-                    th:onchange="'window.location.href = \'' + @{'~/project/' + ${project.getId()} + '/'} + '\' + this.value ' ">
-                <option th:value="${project.getCompanyId()}" disabled th:selected="${project.getCompanyId() == 0}"
-                        hidden>Please Choose Company
+            <!--//TODO Fix "Please Choose Company" item-->
+            <select th:disabled="${projectExists}" th:type="number" th:field="*{companyId}"
+                    th:onchange="'window.location.href = \'' + @{'~/project/new'} + '?companyId=\' + this.value' ">
+                <option th:value="${null}" disabled th:selected="${project.getCompanyId() == null}" hidden>
+                    Please Choose Company
                 </option>
                 <option th:each="company : ${companies}" th:value="${company.getId()}" th:text="${company.getName()}"
                         th:selected="${company.getId() == project.getCompanyId()}"></option>
             </select>
-            <label th:if="${project.getId() > 0}" th:text = "${project.getCompanyId()}"></label>
         </div>
-        <div th:if="${project.getCompanyId() > 0}">
+        <div th:if="${project.getCompanyId() ne null}">
             <div>
                 <label>Designer</label>
-                <select th:type="number" th:field="*{designerId}">
+                <select th:disabled="${disabled}" th:type="number" th:field="*{designerId}">
                     <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
                             th:selected="${user.getId() == project.getDesignerId()}"></option>
                 </select>
             </div>
             <div>
                 <label>Supervisor</label>
-                <select th:type="number" th:field="*{supervisorId}">
+                <select th:disabled="${disabled}" th:type="number" th:field="*{supervisorId}">
                     <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
                             th:selected="${user.getId() == project.getSupervisorId()}"></option>
                 </select>
             </div>
             <div>
                 <label>Chief Engineer</label>
-                <select th:type="number" th:field="*{chiefId}">
+                <select th:disabled="${disabled}" th:type="number" th:field="*{chiefId}">
                     <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
                             th:selected="${user.getId() == project.getChiefId()}"></option>
                 </select>
             </div>
             <div>
                 <label>Controller</label>
-                <select th:type="number" th:field="*{chiefId}">
+                <select th:disabled="${disabled}" th:type="number" th:field="*{chiefId}">
                     <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
                             th:selected="${user.getId() == project.getControllerId()}"></option>
                 </select>
             </div>
             <div>
                 <label>Project Stage</label>
-                <select th:type="number" th:field="*{stageId}">
+                <select th:disabled="${disabled}" th:type="number" th:field="*{stageId}">
                     <option th:each="stage : ${stages}" th:value="${stage.getId()}" th:text="${stage.getName()}"
                             th:selected="${stage.getId() == project.getStageId()}"></option>
                 </select>
             </div>
             <div>
                 <label>Project Name:</label>
-                <input th:disabled="${true}" type="text" th:field="*{name}" th:placeholder="*{getName()}"/>
+                <input th:disabled="${disabled}" type="text" th:field="*{name}" th:placeholder="*{getName()}"/>
             </div>
             <div>
                 <label>Project Code:</label>
-                <input type="text" th:field="*{code}" th:placeholder="*{getCode()}"/>
+                <input th:disabled="${disabled}" type="text" th:field="*{code}" th:placeholder="*{getCode()}"/>
             </div>
             <div>
                 <label>Object Name:</label>
-                <input type="text" th:field="*{objectName}" th:placeholder="*{getObjectName()}"/>
+                <input th:disabled="${disabled}" type="text" th:field="*{objectName}"
+                       th:placeholder="*{getObjectName()}"/>
             </div>
             <div>
                 <label>Object Address:</label>
-                <input type="text" th:field="*{objectAddress}" th:placeholder="*{getObjectAddress()}"/>
+                <input th:disabled="${disabled}" type="text" th:field="*{objectAddress}"
+                       th:placeholder="*{getObjectAddress()}"/>
             </div>
             <div>
                 <label>Release Date:</label>
-                <input type="date" th:field="*{releaseDate}" th:placeholder="*{getReleaseDate().toString()}"/>
+                <input th:disabled="${disabled}" type="date" th:field="*{releaseDate}"
+                       th:placeholder="*{getReleaseDate().toString()}"/>
             </div>
             <div>
                 <label>Volume Number:</label>
-                <input type="number" th:field="*{volumeNumber}" th:placeholder="*{getVolumeNumber()}"/>
+                <input th:disabled="${disabled}" type="number" th:field="*{volumeNumber}"
+                       th:placeholder="*{getVolumeNumber()}"/>
             </div>
             <div>
                 <label>Volume Name:</label>
-                <input type="text" th:field="*{volumeName}" th:placeholder="*{getVolumeName()}"/>
+                <input th:disabled="${disabled}" type="text" th:field="*{volumeName}"
+                       th:placeholder="*{getVolumeName()}"/>
             </div>
 
-            <button type="submit" class="btn btn-primary">SAVE</button>
+            <button th:disabled="${disabled}" type="submit" class="btn btn-primary">SAVE</button>
         </div>
     </form>
-    <div th:if="${project.getId() > 0}">
+    <a th:if="${projectExists}" th:href="@{'~/project/edit/' + ${project.getId()}}">
+        <button type="button" class="btn btn-primary">EDIT</button>
+    </a>
+
+    <div th:if="${project.getId() ne null}">
         <h1><a th:href="@{'~/project/assemble/' + ${project.getId()}}">REASSEMBLE PROJECT</a></h1>
         <h1><a th:href="@{'~/document/new/' + ${project.getId()}}">ADD NEW DOCUMENT</a></h1>
         <h1>Documents list</h1>

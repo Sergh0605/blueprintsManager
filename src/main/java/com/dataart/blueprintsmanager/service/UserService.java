@@ -6,6 +6,7 @@ import com.dataart.blueprintsmanager.persistence.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -25,7 +26,10 @@ public class UserService {
     }
 
     public List<UserDto> fetchAllByCompanyId(Long id) {
-        List<UserEntity> userEntities = userRepository.findAllByCompanyId(id);
+        List<UserEntity> userEntities = new ArrayList<>();
+        if (id != null) {
+            userEntities = userRepository.findAllByCompanyId(id);
+        }
         return toDtoListConverter(userEntities);
     }
 

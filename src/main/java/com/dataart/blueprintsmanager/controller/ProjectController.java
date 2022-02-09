@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -39,35 +40,35 @@ public class ProjectController {
         return "index";
     }
 
-    @GetMapping(value = {"/project/{projectId}"})
-    public String editProject(@PathVariable Long projectId, Model model) {
-        if (projectId == 0L) {
-            return newProject(projectId, 0L, model);
-        }
+    @GetMapping(value = {"/project/view/{projectId}"})
+    public String viewProject(@PathVariable Long projectId, Model model) {
         ProjectDto project = projectService.getById(projectId);
-        List<CompanyDto> companies = companyService.fetchAll();
-        List<UserDto> users = userService.fetchAllByCompanyId(project.getCompanyId());
-        List<StageDto> stages = stageService.fetchAll();
-        model.addAttribute("project", project);
-        model.addAttribute("users", users);
-        model.addAttribute("companies", companies);
-        model.addAttribute("stages", stages);
-        return "project";
+        return getProjectPage(model, project.getCompanyId(), true, true, project);
     }
 
-    @GetMapping(value = {"/project/{projectId}/{companyId}"})
-    public String newProject(@PathVariable Long projectId, @PathVariable Long companyId, Model model) {
+    @GetMapping(value = {"/project/edit/{projectId}"})
+    public String editProject(@PathVariable Long projectId, Model model) {
         ProjectDto project = projectService.getById(projectId);
-        if (project.getId() == 0) {
-            if (companyId > 0) {
-                CompanyDto company = companyService.fetchById(companyId);
-                project.setCompanyId(company.getId());
-            } else project.setCompanyId(0L);
+        return getProjectPage(model, project.getCompanyId(), false, true, project);
+    }
+
+    @GetMapping(value = {"/project/new"})
+    public String newProject(@RequestParam(required = false) Long companyId, Model model) {
+        ProjectDto project = projectService.getNew();
+        if (companyId != null) {
+            CompanyDto company = companyService.fetchById(companyId);
+            project.setCompanyId(company.getId());
+            project.setCompanyId(companyId);
         }
+        return getProjectPage(model, companyId, false, false, project);
+    }
+
+    private String getProjectPage(Model model, Long companyId, boolean fieldsIsDisabled, boolean projectExists, ProjectDto project) {
         List<CompanyDto> companies = companyService.fetchAll();
         List<UserDto> users = userService.fetchAllByCompanyId(companyId);
-        project.setCompanyId(companyId);
         List<StageDto> stages = stageService.fetchAll();
+        model.addAttribute("disabled", fieldsIsDisabled);
+        model.addAttribute("projectExists", projectExists);
         model.addAttribute("project", project);
         model.addAttribute("users", users);
         model.addAttribute("companies", companies);

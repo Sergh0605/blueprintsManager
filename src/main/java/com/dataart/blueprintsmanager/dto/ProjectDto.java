@@ -81,7 +81,7 @@ public class ProjectDto {
 
     public static ProjectDto getEmpty(){
         return ProjectDto.builder()
-                .id(0L)
+                .id(null)
                 .name("")
                 .objectName("")
                 .objectAddress("")
