@@ -3,6 +3,7 @@ package com.dataart.blueprintsmanager.service;
 import com.dataart.blueprintsmanager.dto.CompanyDto;
 import com.dataart.blueprintsmanager.persistence.entity.CompanyEntity;
 import com.dataart.blueprintsmanager.persistence.repository.CompanyRepository;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -12,19 +13,16 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@AllArgsConstructor
 public class CompanyService {
     private final CompanyRepository companyRepository;
 
-    public CompanyService(CompanyRepository companyRepository) {
-        this.companyRepository = companyRepository;
-    }
-
-    public List<CompanyDto> fetchAll() {
+    public List<CompanyDto> getAll() {
         List<CompanyEntity> companyEntities = companyRepository.findAll();
         return toDtoListConverter(companyEntities);
     }
 
-    public CompanyDto fetchById(Long id) {
+    public CompanyDto getById(Long id) {
         CompanyEntity company = companyRepository.findById(id);
         return new CompanyDto(company);
     }

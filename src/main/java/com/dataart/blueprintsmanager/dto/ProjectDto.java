@@ -27,7 +27,7 @@ public class ProjectDto {
     private String objectName;
     private String objectAddress;
 
-    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate releaseDate;
 
     private Long volumeNumber;
@@ -75,18 +75,24 @@ public class ProjectDto {
         return getEditTime().format(dateTimeFormatter).toUpperCase(Locale.ROOT);
     }
 
-    public static ProjectDto getEmpty() {
-        return ProjectDto.builder()
-                .id(null)
-                .name("Новый проект")
-                .objectName("")
-                .objectAddress("")
-                .releaseDate(LocalDate.now())
-                .volumeNumber(1L)
-                .volumeName("")
-                .code("NEW")
-                .stageId(1L)
-                .reassemblyRequired(false)
-                .editTime(LocalDateTime.now()).build();
+    public ProjectEntity updateEntity(ProjectEntity entity) {
+        return ProjectEntity.builder()
+                .id(Optional.ofNullable(this.id).orElse(entity.getId()))
+                .name(Optional.ofNullable(this.name).orElse(entity.getName()))
+                .objectName(Optional.ofNullable(this.objectName).orElse(entity.getObjectName()))
+                .objectAddress(Optional.ofNullable(this.objectAddress).orElse(entity.getObjectAddress()))
+                .releaseDate(Optional.ofNullable(this.releaseDate).orElse(entity.getReleaseDate()))
+                .volumeNumber(Optional.ofNullable(this.volumeNumber).orElse(entity.getVolumeNumber()))
+                .volumeName(Optional.ofNullable(this.volumeName).orElse(entity.getVolumeName()))
+                .code(Optional.ofNullable(this.code).orElse(entity.getCode()))
+                .designer(Optional.ofNullable(this.designerId).map(x -> UserEntity.builder().id(x).build()).orElse(entity.getDesigner()))
+                .supervisor(Optional.ofNullable(this.supervisorId).map(x -> UserEntity.builder().id(x).build()).orElse(entity.getSupervisor()))
+                .chief(Optional.ofNullable(this.chiefId).map(x -> UserEntity.builder().id(x).build()).orElse(entity.getChief()))
+                .controller(Optional.ofNullable(this.controllerId).map(x -> UserEntity.builder().id(x).build()).orElse(entity.getController()))
+                .company(Optional.ofNullable(this.companyId).map(x -> CompanyEntity.builder().id(x).build()).orElse(entity.getCompany()))
+                .stage(Optional.ofNullable(this.stageId).map(x -> StageEntity.builder().id(x).build()).orElse(entity.getStage()))
+                .editTime(LocalDateTime.now())
+                .reassemblyRequired(true)
+                .build();
     }
 }

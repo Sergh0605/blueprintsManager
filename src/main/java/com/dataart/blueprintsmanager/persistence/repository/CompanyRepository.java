@@ -2,6 +2,7 @@ package com.dataart.blueprintsmanager.persistence.repository;
 
 import com.dataart.blueprintsmanager.exceptions.DataBaseCustomApplicationException;
 import com.dataart.blueprintsmanager.persistence.entity.CompanyEntity;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
@@ -15,12 +16,9 @@ import java.util.List;
 
 @Repository
 @Slf4j
+@AllArgsConstructor
 public class CompanyRepository {
     private final DataSource dataSource;
-
-    public CompanyRepository(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
 
     public List<CompanyEntity> findAll() {
         String getAllCompaniesSql =

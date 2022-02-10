@@ -35,7 +35,7 @@
             <!--//TODO Fix "Please Choose Company" item-->
             <select th:disabled="${projectExists}" th:type="number" th:field="*{companyId}"
                     th:onchange="'window.location.href = \'' + @{'~/project/new'} + '?companyId=\' + this.value' ">
-                <option th:value="${null}" disabled th:selected="${project.getCompanyId() eq null}" hidden>
+                <option th:value="${null}" selected hidden>
                     Please Choose Company
                 </option>
                 <option th:each="company : ${companies}" th:value="${company.getId()}" th:text="${company.getName()}"
@@ -139,7 +139,6 @@
             <tr th:each="document : ${documents}">
                 <td><a th:text="${document.getCode()}"></a></td>
                 <td><a th:text="${document.getName()}"></a></td>
-                <td><a th:text="${document.getDesignerName}"></a></td>
                 <td><a th:text="${document.getEditTimeWithFormat()}"></a></td>
                 <td><a th:text="${document.getReassemblyRequired()}"></a></td>
                 <td><a th:href="@{'~/document/' + ${document.getId()}}">EDIT</a></td>
