@@ -38,7 +38,6 @@ public class ProjectDto {
     private String chiefName;
     private String controllerName;
     private String companyName;
-    private String stageCode;
     private Boolean reassemblyRequired;
     private LocalDateTime editTime;
     private Long companyId;
@@ -47,6 +46,7 @@ public class ProjectDto {
     private Long chiefId;
     private Long controllerId;
     private Long stageId;
+    private String stageName;
 
     public ProjectDto(ProjectEntity project) {
         if (project != null) {
@@ -58,18 +58,14 @@ public class ProjectDto {
             this.volumeNumber = project.getVolumeNumber();
             this.volumeName = project.getVolumeName();
             this.code = project.getCode();
-            this.designerName = Optional.ofNullable(project.getDesigner()).map(UserEntity::getLastName).orElse("");
-            this.supervisorName = Optional.ofNullable(project.getSupervisor()).map(UserEntity::getLastName).orElse("");
-            this.chiefName = Optional.ofNullable(project.getChief()).map(UserEntity::getLastName).orElse("");
-            this.controllerName = Optional.ofNullable(project.getController()).map(UserEntity::getLastName).orElse("");
             this.companyName = Optional.ofNullable(project.getCompany()).map(CompanyEntity::getName).orElse("");
-            this.stageCode = Optional.ofNullable(project.getStage()).map(StageEntity::getCode).orElse("");
-            this.designerId = Optional.ofNullable(project.getDesigner()).map(UserEntity::getId).orElse(0L);
-            this.supervisorId = Optional.ofNullable(project.getSupervisor()).map(UserEntity::getId).orElse(0L);
-            this.chiefId = Optional.ofNullable(project.getChief()).map(UserEntity::getId).orElse(0L);
-            this.controllerId = Optional.ofNullable(project.getController()).map(UserEntity::getId).orElse(0L);
-            this.companyId = Optional.ofNullable(project.getCompany()).map(CompanyEntity::getId).orElse(0L);
-            this.stageId = Optional.ofNullable(project.getStage()).map(StageEntity::getId).orElse(0L);
+            this.stageName = Optional.ofNullable(project.getStage()).map(StageEntity::getName).orElse("");
+            this.designerId = Optional.ofNullable(project.getDesigner()).map(UserEntity::getId).orElse(null);
+            this.supervisorId = Optional.ofNullable(project.getSupervisor()).map(UserEntity::getId).orElse(null);
+            this.chiefId = Optional.ofNullable(project.getChief()).map(UserEntity::getId).orElse(null);
+            this.controllerId = Optional.ofNullable(project.getController()).map(UserEntity::getId).orElse(null);
+            this.companyId = Optional.ofNullable(project.getCompany()).map(CompanyEntity::getId).orElse(null);
+            this.stageId = Optional.ofNullable(project.getStage()).map(StageEntity::getId).orElse(null);
             this.reassemblyRequired = project.getReassemblyRequired();
             this.editTime = project.getEditTime();
         }
@@ -79,25 +75,18 @@ public class ProjectDto {
         return getEditTime().format(dateTimeFormatter).toUpperCase(Locale.ROOT);
     }
 
-    public static ProjectDto getEmpty(){
+    public static ProjectDto getEmpty() {
         return ProjectDto.builder()
                 .id(null)
-                .name("")
+                .name("Новый проект")
                 .objectName("")
                 .objectAddress("")
                 .releaseDate(LocalDate.now())
                 .volumeNumber(1L)
                 .volumeName("")
                 .code("NEW")
-                .designerName("")
-                .supervisorName("")
-                .chiefName("")
-                .controllerName("")
-                .companyName("")
-                .stageCode("")
+                .stageId(1L)
                 .reassemblyRequired(false)
                 .editTime(LocalDateTime.now()).build();
-
-
     }
 }

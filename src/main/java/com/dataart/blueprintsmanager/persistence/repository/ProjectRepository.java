@@ -27,7 +27,7 @@ public class ProjectRepository {
 
     public List<ProjectEntity> findAll() {
         String getAllProjectsSql =
-                "SELECT prj.id as id, prj.name as name, prj.code as code, prj.edit_time as time, prj.reassembly_required as reassembly, stg.code as stage, cmp.name as cmpname " +
+                "SELECT prj.id as id, prj.name as name, prj.code as code, prj.edit_time as time, prj.reassembly_required as reassembly, stg.code as stage, stg.name stgName, cmp.name as cmpname " +
                         "FROM bpm_project prj " +
                         "INNER JOIN bpm_company cmp ON prj.company_id = cmp.id " +
                         "INNER JOIN bpm_stage stg ON prj.stage_id = stg.id " +
@@ -44,7 +44,7 @@ public class ProjectRepository {
                         .code(resultSet.getString("code"))
                         .editTime(resultSet.getTimestamp("time").toLocalDateTime())
                         .reassemblyRequired(resultSet.getBoolean("reassembly"))
-                        .stage(StageEntity.builder().code(resultSet.getString("stage")).build())
+                        .stage(StageEntity.builder().code(resultSet.getString("stage")).name(resultSet.getString("stgName")).build())
                         .company(CompanyEntity.builder().name(resultSet.getString("cmpname")).build())
                         .build();
                 projectEntityList.add(project);

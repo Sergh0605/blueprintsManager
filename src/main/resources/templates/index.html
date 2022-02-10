@@ -43,7 +43,7 @@
             <td><a th:text="${project.getCode()}"></a></td>
             <td><a th:text="${project.getName()}"></a></td>
             <td><a th:text="${project.getCompanyName()}"></a></td>
-            <td><a th:text="${project.getStageCode()}"></a></td>
+            <td><a th:text="${project.getStageName()}"></a></td>
             <td><a th:text="${project.getEditTimeWithFormat()}"></a></td>
             <td><a th:text="${project.getReassemblyRequired()}"></a></td>
             <td><a th:href="@{'~/project/view/' + ${project.getId()}}">EDIT</a></td>

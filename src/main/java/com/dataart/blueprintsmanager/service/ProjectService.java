@@ -19,13 +19,9 @@ public class ProjectService {
         this.projectRepository = projectRepository;
     }
 
-    public List<ProjectDto> fetchAll(){
+    public List<ProjectDto> fetchAll() {
         List<ProjectEntity> projects = projectRepository.findAll();
-        return toDtoListConverter(projects);
-    }
-
-    private List<ProjectDto> toDtoListConverter(List<ProjectEntity> projectEntities) {
-        return projectEntities.stream().
+        return projects.stream().
                 filter(Objects::nonNull).
                 map(ProjectDto::new).
                 collect(Collectors.toList());
@@ -37,6 +33,6 @@ public class ProjectService {
     }
 
     public ProjectDto getNew() {
-        return ProjectDto.getEmpty();
+        return new ProjectDto(ProjectEntity.getEmpty());
     }
 }

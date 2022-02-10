@@ -11,9 +11,7 @@ import com.dataart.blueprintsmanager.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -58,9 +56,13 @@ public class ProjectController {
         if (companyId != null) {
             CompanyDto company = companyService.fetchById(companyId);
             project.setCompanyId(company.getId());
-            project.setCompanyId(companyId);
         }
         return getProjectPage(model, companyId, false, false, project);
+    }
+
+    @PostMapping("/project/save")
+    public String saveProject(@ModelAttribute("project") ProjectDto project, Model model) {
+        return "redirect:/project/view/" + project.getId();
     }
 
     private String getProjectPage(Model model, Long companyId, boolean fieldsIsDisabled, boolean projectExists, ProjectDto project) {

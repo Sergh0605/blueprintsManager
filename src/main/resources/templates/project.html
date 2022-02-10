@@ -28,13 +28,14 @@
     <p th:if="${project.getReassemblyRequired() == true}" class="alert alert-danger"
        th:text="'REASSEMBLY REQUIRED'"></p>
 
-    <form method="post" th:action="@{/project/save}" th:object="${project}">
+    <form action="#" method="post" th:action="@{/project/save}" th:object="${project}">
+        <input th:field="*{id}" th:value="${project.getId()}" hidden>
         <div>
             <label>Company Executor</label>
             <!--//TODO Fix "Please Choose Company" item-->
             <select th:disabled="${projectExists}" th:type="number" th:field="*{companyId}"
                     th:onchange="'window.location.href = \'' + @{'~/project/new'} + '?companyId=\' + this.value' ">
-                <option th:value="${null}" disabled th:selected="${project.getCompanyId() == null}" hidden>
+                <option th:value="${null}" disabled th:selected="${project.getCompanyId() eq null}" hidden>
                     Please Choose Company
                 </option>
                 <option th:each="company : ${companies}" th:value="${company.getId()}" th:text="${company.getName()}"
