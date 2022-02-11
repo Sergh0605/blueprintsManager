@@ -19,14 +19,14 @@ public class UserService {
     private final UserRepository userRepository;
 
     public List<UserDto> getAll() {
-        List<UserEntity> userEntities = userRepository.findAll();
+        List<UserEntity> userEntities = userRepository.fetchAllTransactional();
         return toDtoListConverter(userEntities);
     }
 
     public List<UserDto> getAllByCompanyId(Long id) {
         List<UserEntity> userEntities = new ArrayList<>();
         if (id != null) {
-            userEntities = userRepository.findAllByCompanyId(id);
+            userEntities = userRepository.fetchAllByCompanyId(id);
         }
         return toDtoListConverter(userEntities);
     }

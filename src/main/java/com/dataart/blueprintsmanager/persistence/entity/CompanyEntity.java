@@ -15,4 +15,5 @@ public class CompanyEntity {
     private String signerPosition;
     private String signerName;
     private byte[] logo;
+    private String city;
 }

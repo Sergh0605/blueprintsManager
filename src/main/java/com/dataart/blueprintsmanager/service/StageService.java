@@ -18,7 +18,7 @@ public class StageService {
     private final StageRepository stageRepository;
 
     public List<StageDto> getAll() {
-        List<StageEntity> stageEntities = stageRepository.findAll();
+        List<StageEntity> stageEntities = stageRepository.fetchAllTransactional();
         return toDtoListConverter(stageEntities);
     }
 

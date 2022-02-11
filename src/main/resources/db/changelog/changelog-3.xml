@@ -61,4 +61,12 @@
     <changeSet id="DB_setDefault_for_document_reassembly" author="S.Puzakov">
         <addDefaultValue tableName="bpm_document" columnName="reassembly_required" defaultValueBoolean="true"/>
     </changeSet>
+
+    <changeSet id="DB_add_city_in_company" author="S.Puzakov">
+        <addColumn tableName="bpm_company">
+            <column name="city" type="varchar(30)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

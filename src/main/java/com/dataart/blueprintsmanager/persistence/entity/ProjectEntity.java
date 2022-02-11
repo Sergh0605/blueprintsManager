@@ -30,19 +30,4 @@ public class ProjectEntity {
     private Boolean reassemblyRequired;
     private byte[] projectInPdf;
     private LocalDateTime editTime;
-
-    public static ProjectEntity getEmpty() {
-        return ProjectEntity.builder()
-                .id(null)
-                .name("Новый проект")
-                .objectName("")
-                .objectAddress("")
-                .releaseDate(LocalDate.now())
-                .volumeNumber(1L)
-                .volumeName("")
-                .code("NEW")
-                .stage(StageEntity.builder().id(1L).build())
-                .reassemblyRequired(false)
-                .editTime(LocalDateTime.now()).build();
-    }
 }

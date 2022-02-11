@@ -1,10 +1,7 @@
 package com.dataart.blueprintsmanager.persistence.repository;
 
 import com.dataart.blueprintsmanager.exceptions.DataBaseCustomApplicationException;
-import com.dataart.blueprintsmanager.persistence.entity.CompanyEntity;
 import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
-import com.dataart.blueprintsmanager.persistence.entity.StageEntity;
-import com.dataart.blueprintsmanager.persistence.entity.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -19,32 +16,56 @@ import java.util.List;
 @AllArgsConstructor
 public class ProjectRepository {
     private final DataSource dataSource;
-    private final DocumentRepository documentRepository;
+    private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
+    private final StageRepository stageRepository;
 
-    public List<ProjectEntity> findAll() {
+    private ProjectEntity buildProject(ResultSet resultSet, Connection connection) {
+        try {
+            return ProjectEntity.builder()
+                    .id(resultSet.getLong("id"))
+                    .name(resultSet.getString("name"))
+                    .objectName(resultSet.getString("objName"))
+                    .objectAddress(resultSet.getString("objAddr"))
+                    .releaseDate(resultSet.getDate("date").toLocalDate())
+                    .volumeNumber(resultSet.getLong("volNumber"))
+                    .volumeName(resultSet.getString("subname"))
+                    .code(resultSet.getString("code"))
+                    .designer(userRepository.fetchById(resultSet.getLong("designerId"), connection))
+                    .supervisor(userRepository.fetchById(resultSet.getLong("supervisorId"), connection))
+                    .chief(userRepository.fetchById(resultSet.getLong("chiefId"), connection))
+                    .controller(userRepository.fetchById(resultSet.getLong("controllerId"), connection))
+                    .company(companyRepository.fetchById(resultSet.getLong("companyId"), connection))
+                    .stage(stageRepository.fetchById(resultSet.getLong("stageId"), connection))
+                    .reassemblyRequired(resultSet.getBoolean("reassembly"))
+                    .editTime(resultSet.getTimestamp("editTime").toLocalDateTime())
+                    .build();
+        } catch (SQLException e) {
+            log.debug(e.getMessage());
+            throw new DataBaseCustomApplicationException("Can't parse Project object from DB");
+        }
+    }
+
+    public List<ProjectEntity> fetchAllTransactional() {
         String getAllProjectsSql =
-                "SELECT prj.id as id, prj.name as name, prj.code as code, prj.edit_time as time, prj.reassembly_required as reassembly, stg.code as stage, stg.name stgName, cmp.name as cmpname " +
-                        "FROM bpm_project prj " +
-                        "INNER JOIN bpm_company cmp ON prj.company_id = cmp.id " +
-                        "INNER JOIN bpm_stage stg ON prj.stage_id = stg.id " +
-                        "WHERE prj.deleted = 'false' " +
-                        "ORDER BY time DESC";
+                "SELECT id, name, object_name as objName, object_address as objAddr, release_date as date, " +
+                        "volume_number as volNumber, subname, code, designer_id as designerId, " +
+                        "supervisor_id as supervisorId, chief_id as chiefId, controller_id as controllerId, " +
+                        "company_id as companyId, stage_id as stageId, reassembly_required as reassembly, edit_time as editTime " +
+                        "FROM bpm_project " +
+                        "WHERE deleted = 'false' " +
+                        "ORDER BY editTime DESC";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(getAllProjectsSql);
              ResultSet resultSet = pstmt.executeQuery()) {
             List<ProjectEntity> projectEntityList = new ArrayList<>();
+            Integer projectCount = 0;
             while (resultSet.next()) {
-                ProjectEntity project = ProjectEntity.builder()
-                        .id(resultSet.getLong("id"))
-                        .name(resultSet.getString("name"))
-                        .code(resultSet.getString("code"))
-                        .editTime(resultSet.getTimestamp("time").toLocalDateTime())
-                        .reassemblyRequired(resultSet.getBoolean("reassembly"))
-                        .stage(StageEntity.builder().code(resultSet.getString("stage")).name(resultSet.getString("stgName")).build())
-                        .company(CompanyEntity.builder().name(resultSet.getString("cmpname")).build())
-                        .build();
+                ProjectEntity project = buildProject(resultSet, connection);
                 projectEntityList.add(project);
+                projectCount++;
             }
+            log.debug(String.format("%d Project found", projectCount));
             return projectEntityList;
         } catch (SQLException e) {
             log.debug(e.getMessage());
@@ -57,7 +78,6 @@ public class ProjectRepository {
             connection.setAutoCommit(false);
             ProjectEntity projectEntity = fetchById(projectId, connection);
             connection.commit();
-            log.debug(String.format("Project with id = %d founded", projectId));
             return projectEntity;
         } catch (SQLException e) {
             log.debug(e.getMessage());
@@ -65,37 +85,21 @@ public class ProjectRepository {
         }
     }
 
-    private ProjectEntity fetchById(Long projectId, Connection connection) throws SQLException {
+    protected ProjectEntity fetchById(Long projectId, Connection connection) throws SQLException {
         log.debug(String.format("Try to find Project with id = %d", projectId));
         String getProjectByIdSql =
-                "SELECT  id, name, object_name as objName, object_address as objAddr, release_date as relDate, " +
+                "SELECT id, name, object_name as objName, object_address as objAddr, release_date as date, " +
                         "volume_number as volNumber, subname, code, designer_id as designerId, " +
                         "supervisor_id as supervisorId, chief_id as chiefId, controller_id as controllerId, " +
-                        "company_id as companyId, stage_id as stageId, reassembly_required as reassembly, edit_time as eTime " +
-                        "FROM bpm_project as prj " +
+                        "company_id as companyId, stage_id as stageId, reassembly_required as reassembly, edit_time as editTime " +
+                        "FROM bpm_project " +
                         "WHERE deleted = 'false' AND  id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(getProjectByIdSql)) {
             pstmt.setLong(1, projectId);
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 if (resultSet.next()) {
-                    return ProjectEntity.builder()
-                            .id(resultSet.getLong("id"))
-                            .name(resultSet.getString("name"))
-                            .objectName(resultSet.getString("objName"))
-                            .objectAddress(resultSet.getString("objAddr"))
-                            .releaseDate(resultSet.getDate("relDate").toLocalDate())
-                            .volumeNumber(resultSet.getLong("volNumber"))
-                            .volumeName(resultSet.getString("subname"))
-                            .code(resultSet.getString("code"))
-                            .designer(UserEntity.builder().id(resultSet.getLong("designerId")).build())
-                            .supervisor(UserEntity.builder().id(resultSet.getLong("supervisorId")).build())
-                            .chief(UserEntity.builder().id(resultSet.getLong("chiefId")).build())
-                            .controller(UserEntity.builder().id(resultSet.getLong("controllerId")).build())
-                            .company(CompanyEntity.builder().id(resultSet.getLong("companyId")).build())
-                            .stage(StageEntity.builder().id(resultSet.getLong("stageId")).build())
-                            .reassemblyRequired(resultSet.getBoolean("reassembly"))
-                            .editTime(resultSet.getTimestamp("eTime").toLocalDateTime())
-                            .build();
+                    log.debug(String.format("Project with id = %d found", projectId));
+                    return buildProject(resultSet, connection);
                 }
                 String message = String.format("Project with id= %d not found", projectId);
                 log.debug(message);
@@ -110,7 +114,7 @@ public class ProjectRepository {
             try {
                 log.debug(String.format("Try to update project with id = %d", project.getId()));
                 update(project, connection);
-                int documentsAffected = documentRepository.setReassemblyRequiredByProjectId(project.getId(), connection);
+                int documentsAffected = setReassemblyRequiredByProjectId(project.getId(), connection);
                 ProjectEntity projectEntity = fetchById(project.getId(), connection);
                 connection.commit();
                 log.debug(String.format("Reassembly_required set true for %d documents in Project with id = %d", documentsAffected, project.getId()));
@@ -124,6 +128,16 @@ public class ProjectRepository {
         } catch (SQLException e) {
             log.debug(e.getMessage());
             throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
+
+    private int setReassemblyRequiredByProjectId(Long projectId, Connection connection) throws SQLException {
+        String updateProjectByIdSql =
+                "UPDATE  bpm_document SET reassembly_required = true " +
+                        "WHERE project_id = ? AND deleted = false";
+        try (PreparedStatement pstmt = connection.prepareStatement(updateProjectByIdSql)) {
+            pstmt.setLong(1, projectId);
+            return pstmt.executeUpdate();
         }
     }
 
