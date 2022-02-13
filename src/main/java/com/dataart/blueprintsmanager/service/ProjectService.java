@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class ProjectService {
     private final ProjectRepository projectRepository;
+    private DocumentService documentService;
 
     public List<ProjectDto> getAll() {
         List<ProjectEntity> projects = projectRepository.fetchAllTransactional();
@@ -32,7 +33,7 @@ public class ProjectService {
         return new ProjectDto(getById(projectId));
     }
 
-    private ProjectEntity getById(Long projectId) {
+    protected ProjectEntity getById(Long projectId) {
         return projectRepository.fetchByIdTransactional(projectId);
     }
 
@@ -42,7 +43,9 @@ public class ProjectService {
 
     public ProjectDto save(ProjectDto projectForSave) {
             ProjectEntity projectEntity = projectForSave.updateEntity(getEmpty());
-            return new ProjectDto(projectRepository.createTransactional(projectEntity));
+            ProjectEntity createdProject = projectRepository.createTransactional(projectEntity);
+            documentService.createCoverPage(createdProject.getId());
+            return new ProjectDto(projectRepository.fetchByIdTransactional(createdProject.getId()));
     }
 
     public ProjectDto update(ProjectDto projectForUpdate) {

@@ -30,6 +30,9 @@ public class DocumentDto {
     private Long supervisorId;
     private Boolean reassemblyRequired;
     private LocalDateTime editTime;
+    private byte[] documentInPdf;
+    private String documentFileName;
+    private String documentFullCode;
 
     public String getEditTimeWithFormat() {
         return getEditTime().format(dateTimeFormatter).toUpperCase(Locale.ROOT);

@@ -128,7 +128,6 @@
             <tr>
                 <td><a>CODE</a></td>
                 <td><a>NAME</a></td>
-                <td><a>DESIGNER</a></td>
                 <td><a>EDIT TIME</a></td>
                 <td><a>REASSEMBLING REQUIRED</a></td>
                 <td></td>
@@ -137,14 +136,14 @@
                 <td></td>
             </tr>
             <tr th:each="document : ${documents}">
-                <td><a th:text="${document.getCode()}"></a></td>
+                <td><a th:text="${document.getDocumentFullCode()}"></a></td>
                 <td><a th:text="${document.getName()}"></a></td>
                 <td><a th:text="${document.getEditTimeWithFormat()}"></a></td>
                 <td><a th:text="${document.getReassemblyRequired()}"></a></td>
                 <td><a th:href="@{'~/document/' + ${document.getId()}}">EDIT</a></td>
                 <td><a th:href="@{'~/document/assemble/' + ${document.getId()}}">ASSEMBLE</a></td>
-                <td><a th:href="@{'~/document/download/' + ${project.getId()}}">DOWNLOAD</a></td>
-                <td><a th:href="@{'~/document/delete/' + ${project.getId()}}">DELETE</a></td>
+                <td><a th:href="@{'~/document/download/' + ${document.getId()}}">DOWNLOAD</a></td>
+                <td><a th:href="@{'~/document/delete/' + ${document.getId()}}">DELETE</a></td>
             </tr>
             </tbody>
         </table>

@@ -25,8 +25,8 @@ public class CompanyRepository {
             return CompanyEntity.builder()
                     .id(resultSet.getLong("id"))
                     .name(resultSet.getString("name"))
-                    .signerPosition(resultSet.getString("signer_position"))
-                    .signerName(resultSet.getString("signer_name"))
+                    .signerPosition(resultSet.getString("signerPosition"))
+                    .signerName(resultSet.getString("signerName"))
                     .logo(resultSet.getBytes("logo"))
                     .city(resultSet.getString("city"))
                     .build();
@@ -51,7 +51,7 @@ public class CompanyRepository {
 
     public List<CompanyEntity> fetchAllTransactional() {
         String getAllCompaniesSql =
-                "SELECT *" +
+                "SELECT id, name, signer_position as signerPosition, signer_name as signerName, encode(logo, 'escape') as logo, city " +
                         "FROM bpm_company " +
                         "WHERE deleted = 'false'";
         try (Connection connection = dataSource.getConnection();
@@ -74,7 +74,7 @@ public class CompanyRepository {
 
     protected CompanyEntity fetchById(Long companyId, Connection connection) {
         String getCompanyByIdSql =
-                "SELECT *" +
+                "SELECT id, name, signer_position as signerPosition, signer_name as signerName, encode(logo, 'escape') as logo, city " +
                         "FROM bpm_company " +
                         "WHERE deleted = 'false' AND  id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(getCompanyByIdSql)) {
