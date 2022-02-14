@@ -14,9 +14,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -155,14 +152,38 @@ public class DocumentService {
         return DocumentDataForPdf.builder()
                 .documentCode(getFullCode(document))
                 .documentName(document.getName())
-                .designerName(Optional.ofNullable(document.getDesigner()).map(UserEntity::getLastName).orElse(document.getProject().getDesigner().getLastName()))
-                .designerSign(Optional.ofNullable(document.getDesigner()).map(UserEntity::getSignature).orElse(document.getProject().getDesigner().getSignature()))
-                .supervisorName(Optional.ofNullable(document.getSupervisor()).map(UserEntity::getLastName).orElse(document.getProject().getSupervisor().getLastName()))
-                .supervisorSign(Optional.ofNullable(document.getSupervisor()).map(UserEntity::getSignature).orElse(document.getProject().getSupervisor().getSignature()))
-                .controllerName(document.getProject().getController().getLastName())
-                .controllerSign(document.getProject().getController().getSignature())
-                .chiefEngineerName(document.getProject().getChief().getLastName())
-                .chiefEngineerSign(document.getProject().getChief().getSignature())
+                .designerName(Optional.ofNullable(document.getDesigner())
+                        .map(UserEntity::getLastName)
+                        .orElse(Optional.ofNullable(document.getProject().getDesigner())
+                                .map(UserEntity::getLastName)
+                                .orElse("")))
+                .designerSign(Optional.ofNullable(document.getDesigner())
+                        .map(UserEntity::getSignature)
+                        .orElse(Optional.ofNullable(document.getProject().getDesigner())
+                                .map(UserEntity::getSignature)
+                                .orElse(null)))
+                .supervisorName(Optional.ofNullable(document.getSupervisor())
+                        .map(UserEntity::getLastName)
+                        .orElse(Optional.ofNullable(document.getProject().getSupervisor())
+                                .map(UserEntity::getLastName)
+                                .orElse("")))
+                .supervisorSign(Optional.ofNullable(document.getSupervisor())
+                        .map(UserEntity::getSignature)
+                        .orElse(Optional.ofNullable(document.getProject().getSupervisor())
+                                .map(UserEntity::getSignature)
+                                .orElse(null)))
+                .controllerName(Optional.ofNullable(document.getProject().getController())
+                        .map(UserEntity::getLastName)
+                        .orElse(null))
+                .controllerSign(Optional.ofNullable(document.getProject().getController())
+                        .map(UserEntity::getSignature)
+                        .orElse(null))
+                .chiefEngineerName(Optional.ofNullable(document.getProject().getChief())
+                        .map(UserEntity::getLastName)
+                        .orElse(null))
+                .chiefEngineerSign(Optional.ofNullable(document.getProject().getChief())
+                        .map(UserEntity::getSignature)
+                        .orElse(null))
                 .stage(document.getProject().getStage().getCode())
                 .projectName(document.getProject().getName())
                 .objectAddress(document.getProject().getObjectAddress())
@@ -231,11 +252,6 @@ public class DocumentService {
     public DocumentDto getFileForDownload(Long documentId) {
         DocumentEntity document = documentRepository.fetchByIdTransactional(documentId);
         byte[] documentInPdf = documentRepository.fetchDocumentInPdfByDocumentId(documentId);
-        try {
-            Files.write(Paths.get("./target/coverPage.pdf"), documentInPdf);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
         StringBuilder documentFileName = new StringBuilder();
         documentFileName
                 .append(getFullCode(document))
@@ -260,5 +276,9 @@ public class DocumentService {
                 .append("-")
                 .append(document.getProject().getStage().getCode())
                 .toString();
+    }
+
+    public byte[] getInPdfById(Long id) {
+        return documentRepository.fetchDocumentInPdfByDocumentId(id);
     }
 }

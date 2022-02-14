@@ -1,7 +1,10 @@
 package com.dataart.blueprintsmanager.persistence.repository;
 
 import com.dataart.blueprintsmanager.exceptions.DataBaseCustomApplicationException;
+import com.dataart.blueprintsmanager.persistence.entity.CompanyEntity;
 import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
+import com.dataart.blueprintsmanager.persistence.entity.StageEntity;
+import com.dataart.blueprintsmanager.persistence.entity.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -10,6 +13,7 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @Slf4j
@@ -31,12 +35,12 @@ public class ProjectRepository {
                     .volumeNumber(resultSet.getLong("volNumber"))
                     .volumeName(resultSet.getString("subname"))
                     .code(resultSet.getString("code"))
-                    .designer(userRepository.fetchById(resultSet.getLong("designerId"), connection))
-                    .supervisor(userRepository.fetchById(resultSet.getLong("supervisorId"), connection))
-                    .chief(userRepository.fetchById(resultSet.getLong("chiefId"), connection))
-                    .controller(userRepository.fetchById(resultSet.getLong("controllerId"), connection))
-                    .company(companyRepository.fetchById(resultSet.getLong("companyId"), connection))
-                    .stage(stageRepository.fetchById(resultSet.getLong("stageId"), connection))
+                    .designer(getUser((Long) resultSet.getObject("designerId"), connection))
+                    .supervisor(getUser((Long) resultSet.getObject("supervisorId"), connection))
+                    .chief(getUser((Long) resultSet.getObject("chiefId"), connection))
+                    .controller(getUser((Long) resultSet.getObject("controllerId"), connection))
+                    .company(getCompany((Long) resultSet.getObject("companyId"), connection))
+                    .stage(getStage((Long) resultSet.getObject("stageId"), connection))
                     .reassemblyRequired(resultSet.getBoolean("reassembly"))
                     .editTime(resultSet.getTimestamp("editTime").toLocalDateTime())
                     .build();
@@ -44,6 +48,18 @@ public class ProjectRepository {
             log.debug(e.getMessage());
             throw new DataBaseCustomApplicationException("Can't parse Project object from DB");
         }
+    }
+
+    private UserEntity getUser(Long userId, Connection connection) {
+        return Optional.ofNullable(userId).map(x -> userRepository.fetchById(x, connection)).orElse(null);
+    }
+
+    private CompanyEntity getCompany(Long companyId, Connection connection) {
+        return Optional.ofNullable(companyId).map(x -> companyRepository.fetchById(x, connection)).orElse(null);
+    }
+
+    private StageEntity getStage(Long stageId, Connection connection) {
+        return Optional.ofNullable(stageId).map(x -> stageRepository.fetchById(x, connection)).orElse(null);
     }
 
     public List<ProjectEntity> fetchAllTransactional() {
@@ -204,12 +220,12 @@ public class ProjectRepository {
             pstmt.setLong(5, project.getVolumeNumber());
             pstmt.setString(6, project.getVolumeName());
             pstmt.setString(7, project.getCode());
-            pstmt.setLong(8, project.getDesigner().getId());
-            pstmt.setLong(9, project.getSupervisor().getId());
-            pstmt.setLong(10, project.getChief().getId());
-            pstmt.setLong(11, project.getChief().getId());
-            pstmt.setLong(12, project.getCompany().getId());
-            pstmt.setLong(13, project.getStage().getId());
+            pstmt.setObject(8, Optional.ofNullable(project.getDesigner()).map(UserEntity::getId).orElse(null));
+            pstmt.setObject(9, Optional.ofNullable(project.getSupervisor()).map(UserEntity::getId).orElse(null));
+            pstmt.setObject(10, Optional.ofNullable(project.getChief()).map(UserEntity::getId).orElse(null));
+            pstmt.setObject(11, Optional.ofNullable(project.getController()).map(UserEntity::getId).orElse(null));
+            pstmt.setObject(12, Optional.ofNullable(project.getCompany()).map(CompanyEntity::getId).orElse(null));
+            pstmt.setObject(13, Optional.ofNullable(project.getStage()).map(StageEntity::getId).orElse(null));
             pstmt.setBoolean(14, project.getReassemblyRequired());
             pstmt.setTimestamp(15, Timestamp.valueOf(project.getEditTime()));
             int affectedRows = pstmt.executeUpdate();
@@ -223,6 +239,69 @@ public class ProjectRepository {
                     throw new SQLException("Creating project failed, no ID obtained.");
                 }
             }
+        }
+    }
+
+    public ProjectEntity updateProjectInPdfTransactional(Long projectId, byte[] projectInPdf) {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                log.debug(String.format("Try to update Project file in PDF with id = %d", projectId));
+                updateProjectInPdf(projectId, projectInPdf, connection);
+                ProjectEntity projectEntity = fetchById(projectId, connection);
+                connection.commit();
+                log.debug(String.format("Project in PDF updated in Document with id = %d", projectId));
+                return projectEntity;
+            } catch (SQLException e) {
+                connection.rollback();
+                log.debug(e.getMessage());
+                throw new DataBaseCustomApplicationException("Database unexpected error.");
+            }
+        } catch (SQLException e) {
+            log.debug(e.getMessage());
+            throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
+
+    private void updateProjectInPdf(Long projectId, byte[] projectInPdf, Connection connection) throws SQLException {
+        String updateFileInDocumentByIdSql =
+                "UPDATE  bpm_project SET project_in_pdf = ?, reassembly_required = false " +
+                        "WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(updateFileInDocumentByIdSql)) {
+            pstmt.setBytes(1, projectInPdf);
+            pstmt.setLong(2, projectId);
+            pstmt.executeUpdate();
+        }
+    }
+
+    public byte[] fetchProjectInPdfByDocumentId(Long projectId) {
+        try (Connection connection = dataSource.getConnection()) {
+            log.debug(String.format("Try to find Project in PDF for Document with id = %d", projectId));
+            String getContentInPdfSql =
+                    "SELECT project_in_pdf " +
+                            "FROM bpm_project " +
+                            "WHERE id = ?";
+            try (PreparedStatement pstmt = connection.prepareStatement(getContentInPdfSql)) {
+                pstmt.setLong(1, projectId);
+                try (ResultSet resultSet = pstmt.executeQuery()) {
+                    if (resultSet.next()) {
+                        byte[] projectInPdf = resultSet.getBytes(1);
+                        if (projectInPdf != null && projectInPdf.length > 0) {
+                            log.debug(String.format("Project in Pdf for Project with id = %d found", projectId));
+                            return projectInPdf;
+                        }
+                        String message = String.format("Project in Pdf with id = %d not found", projectId);
+                        log.debug(message);
+                        throw new DataBaseCustomApplicationException(message);
+                    }
+                    String message = String.format("Project with id= %d not found", projectId);
+                    log.debug(message);
+                    throw new DataBaseCustomApplicationException(message);
+                }
+            }
+        } catch (SQLException e) {
+            log.debug(e.getMessage());
+            throw new DataBaseCustomApplicationException("Database connection error.");
         }
     }
 }

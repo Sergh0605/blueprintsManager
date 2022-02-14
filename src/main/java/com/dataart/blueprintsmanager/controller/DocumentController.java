@@ -3,6 +3,7 @@ package com.dataart.blueprintsmanager.controller;
 import com.dataart.blueprintsmanager.dto.DocumentDto;
 import com.dataart.blueprintsmanager.dto.ProjectDto;
 import com.dataart.blueprintsmanager.dto.UserDto;
+import com.dataart.blueprintsmanager.exceptions.CustomApplicationException;
 import com.dataart.blueprintsmanager.persistence.entity.DocumentType;
 import com.dataart.blueprintsmanager.service.DocumentService;
 import com.dataart.blueprintsmanager.service.DocumentTypeService;
@@ -39,7 +40,8 @@ public class DocumentController {
         try (ServletOutputStream outputStream = response.getOutputStream()) {
             outputStream.write(document.getDocumentInPdf());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.debug(e.getMessage());
+            throw new CustomApplicationException("Broken file for download");
         }
     }
 

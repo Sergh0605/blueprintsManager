@@ -1,6 +1,7 @@
 package com.dataart.blueprintsmanager.controller;
 
 import com.dataart.blueprintsmanager.dto.*;
+import com.dataart.blueprintsmanager.exceptions.CustomApplicationException;
 import com.dataart.blueprintsmanager.service.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
@@ -75,5 +78,26 @@ public class ProjectController {
         model.addAttribute("companies", companies);
         model.addAttribute("stages", stages);
         return "project";
+    }
+
+    @GetMapping(value = {"/project/download/{projectId}"})
+    public void serveFile(@PathVariable Long projectId, HttpServletResponse response) {
+        ProjectDto project = projectService.getFileForDownload(projectId);
+        response.setContentType("application/octet-stream");
+        String headerKey = "Content-Disposition";
+        String headerValue = "attachment; filename = " + project.getProjectInPdfFileName();
+        response.setHeader(headerKey, headerValue);
+        try (ServletOutputStream outputStream = response.getOutputStream()) {
+            outputStream.write(project.getProjectInPdf());
+        } catch (IOException e) {
+            log.debug(e.getMessage());
+            throw new CustomApplicationException("Broken file for download");
+        }
+    }
+
+    @GetMapping(value = {"/project/assemble/{projectId}"})
+    public String reassemble(@PathVariable Long projectId, Model model) {
+        projectService.reassemble(projectId);
+        return "redirect:/project/view/" + projectId;
     }
 }

@@ -27,7 +27,7 @@
         <button type="button" class="btn btn-primary">BACK TO PROJECT</button>
     </a>
     <a th:href="@{'~/document/download/' + ${document.getId()}}">
-        <button type="button" class="btn btn-primary">DOWNLOAD DOCUMENT</button>
+        <button type="button" class="btn btn-success">DOWNLOAD DOCUMENT</button>
     </a>
     <h1 th:text="'DOCUMENT ' + ${document.getName()}"></h1>
     <h4 th:text="'Last edit at ' + ${document.getEditTimeWithFormat()}"></h4>
@@ -78,10 +78,10 @@
         <button th:disabled="${unmodified}" type="button" class="btn btn-primary">EDIT</button>
     </a>
     <a th:href="@{'~/document/assemble/' + ${document.getId()}}">
-        <button type="button" class="btn btn-primary">REASSEMBLE DOCUMENT</button>
+        <button type="button" class="btn btn-warning">REASSEMBLE DOCUMENT</button>
     </a>
     <a th:href="@{'~/document/delete/' + ${document.getId()}}">
-        <button th:disabled="${unmodified}" type="button" class="btn btn-primary">DELETE DOCUMENT</button>
+        <button th:disabled="${unmodified}" type="button" class="btn btn-danger">DELETE DOCUMENT</button>
     </a>
 </div>
 

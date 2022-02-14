@@ -47,6 +47,8 @@ public class ProjectDto {
     private Long controllerId;
     private Long stageId;
     private String stageName;
+    private String projectInPdfFileName;
+    private byte[] projectInPdf;
 
     public ProjectDto(ProjectEntity project) {
         if (project != null) {

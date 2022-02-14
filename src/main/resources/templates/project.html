@@ -23,6 +23,12 @@
     </table>
 </div>
 <div style="padding-left: 5%; padding-right: 5%">
+    <a th:href="@{'~/project'}">
+        <button type="button" class="btn btn-primary">BACK TO PROJECT LIST</button>
+    </a>
+    <a th:if="${projectExists}" th:href="@{'~/project/download/' + ${project.getId()}}">
+        <button type="button" class="btn btn-success">DOWNLOAD PROJECT</button>
+    </a>
     <h1 th:text="'PROJECT ' + ${project.getCode()}"></h1>
     <h4 th:text="'Last edit at ' + ${project.getEditTimeWithFormat()}"></h4>
     <p th:if="${project.getReassemblyRequired() == true}" class="alert alert-danger"
@@ -115,13 +121,19 @@
             <button th:disabled="${disabled}" type="submit" class="btn btn-primary">SAVE</button>
         </div>
     </form>
-    <a th:if="${projectExists}" th:href="@{'~/project/edit/' + ${project.getId()}}">
-        <button type="button" class="btn btn-primary">EDIT</button>
-    </a>
+    <div th:if="${projectExists}">
+        <a th:href="@{'~/project/edit/' + ${project.getId()}}">
+            <button type="button" class="btn btn-primary">EDIT</button>
+        </a>
+        <a th:href="@{'~/project/assemble/' + ${project.getId()}}">
+            <button type="button" class="btn btn-warning">REASSEMBLE PROJECT</button>
+        </a>
+        <a th:href="@{'~/project/delete/' + ${project.getId()}}">
+            <button type="button" class="btn btn-danger">DELETE PROJECT</button>
+        </a>
+    </div>
 
-    <div th:if="${project.getId() ne null}">
-        <h1><a th:href="@{'~/project/assemble/' + ${project.getId()}}">REASSEMBLE PROJECT</a></h1>
-        <h1><a th:href="@{'~/document/new/' + ${project.getId()}}">ADD NEW DOCUMENT</a></h1>
+    <div th:if="${projectExists}">
         <h1>Documents list</h1>
         <table id="table-content" class="table table-striped">
             <tbody>
@@ -140,10 +152,24 @@
                 <td><a th:text="${document.getName()}"></a></td>
                 <td><a th:text="${document.getEditTimeWithFormat()}"></a></td>
                 <td><a th:text="${document.getReassemblyRequired()}"></a></td>
-                <td><a th:href="@{'~/document/view/' + ${document.getId()}}">VIEW</a></td>
-                <td><a th:href="@{'~/document/assemble/' + ${document.getId()}}">ASSEMBLE</a></td>
-                <td><a th:href="@{'~/document/download/' + ${document.getId()}}">DOWNLOAD</a></td>
-                <td><a th:href="@{'~/document/delete/' + ${document.getId()}}">DELETE</a></td>
+                <td>
+                    <a th:href="@{'~/document/view/' + ${document.getId()}}">
+                        <button type="button" class="btn btn-primary">VIEW</button>
+                    </a>
+                </td>
+                <td>
+                    <a th:href="@{'~/document/assemble/' + ${document.getId()}}">
+                        <button type="button" class="btn btn-warning">ASSEMBLE</button>
+                    </a>
+                </td>
+                <td><a th:href="@{'~/document/download/' + ${document.getId()}}">
+                    <button type="button" class="btn btn-success">DOWNLOAD</button>
+                </a>
+                </td>
+                <td><a th:href="@{'~/document/delete/' + ${document.getId()}}">
+                    <button type="button" class="btn btn-danger">DELETE</button>
+                </a>
+                </td>
             </tr>
             </tbody>
         </table>

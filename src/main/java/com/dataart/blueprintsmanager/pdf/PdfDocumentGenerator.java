@@ -11,6 +11,7 @@ import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.utils.PdfMerger;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.*;
@@ -354,6 +355,24 @@ public class PdfDocumentGenerator {
 
     public PdfDocumentGenerator getFilledTextDocumentTitleBlock(DocumentDataForPdf inputStamp) {
         return getFilledDocument(getRelativeFieldAreasWithDataForTextDocumentTitleBlock(inputStamp));
+    }
+
+    public static byte[] mergePdf(byte[] firstDocInBytes, byte[] secondDocInBytes) {
+        try (PdfReader firstReader = new PdfReader(new ByteArrayInputStream(firstDocInBytes));
+             ByteArrayOutputStream os = new ByteArrayOutputStream();
+             PdfWriter writer = new PdfWriter(os);
+             PdfReader secondReader = new PdfReader(new ByteArrayInputStream(secondDocInBytes));
+             PdfDocument firstPdfDocument = new PdfDocument(firstReader, writer.setSmartMode(true));
+             PdfDocument secondPdfDocument = new PdfDocument(secondReader)) {
+            PdfMerger merger = new PdfMerger(firstPdfDocument);
+            merger.merge(secondPdfDocument, 1, secondPdfDocument.getNumberOfPages());
+            firstPdfDocument.close();
+            secondPdfDocument.close();
+            return os.toByteArray();
+        } catch (java.io.IOException e) {
+            log.debug(e.getMessage());
+            throw new PdfCustomApplicationException("Can't read PDF file");
+        }
     }
 
 }
