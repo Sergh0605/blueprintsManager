@@ -45,6 +45,8 @@ public class ProjectService {
             ProjectEntity projectEntity = projectForSave.updateEntity(getEmpty());
             ProjectEntity createdProject = projectRepository.createTransactional(projectEntity);
             documentService.createCoverPage(createdProject.getId());
+            documentService.createTitlePage(createdProject.getId());
+            documentService.createTableOfContents(createdProject.getId());
             return new ProjectDto(projectRepository.fetchByIdTransactional(createdProject.getId()));
     }
 

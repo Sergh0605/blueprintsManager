@@ -1,9 +1,11 @@
 package com.dataart.blueprintsmanager.service;
 
 import com.dataart.blueprintsmanager.dto.DocumentDto;
+import com.dataart.blueprintsmanager.exceptions.CustomApplicationException;
 import com.dataart.blueprintsmanager.pdf.CompanyDataForPdf;
 import com.dataart.blueprintsmanager.pdf.DocumentDataForPdf;
 import com.dataart.blueprintsmanager.pdf.PdfDocumentGenerator;
+import com.dataart.blueprintsmanager.pdf.RowOfContentsDocument;
 import com.dataart.blueprintsmanager.persistence.entity.DocumentEntity;
 import com.dataart.blueprintsmanager.persistence.entity.DocumentType;
 import com.dataart.blueprintsmanager.persistence.entity.UserEntity;
@@ -33,7 +35,7 @@ public class DocumentService {
     public void createCoverPage(Long projectId) {
         DocumentDto document = DocumentDto.builder()
                 .projectId(projectId)
-                .code("")
+                .code("О")
                 .numberInProject(1)
                 .typeId(DocumentType.COVER_PAGE.getId())
                 .name("Обложка")
@@ -41,7 +43,35 @@ public class DocumentService {
                 .editTime(LocalDateTime.now())
                 .build();
         byte[] coverPageTemplate = documentTypeService.getDocumentTemplateByTypeId(document.getTypeId()).get(0);
-        reassembleCoverPage(save(document, coverPageTemplate).getId());
+        reassembleDocument(save(document, coverPageTemplate).getId());
+    }
+
+    public void createTitlePage(Long projectId) {
+        DocumentDto document = DocumentDto.builder()
+                .projectId(projectId)
+                .code("ТЛ")
+                .numberInProject(2)
+                .typeId(DocumentType.TITLE_PAGE.getId())
+                .name("Титульный лист")
+                .reassemblyRequired(true)
+                .editTime(LocalDateTime.now())
+                .build();
+        byte[] titleListTemplate = documentTypeService.getDocumentTemplateByTypeId(document.getTypeId()).get(0);
+        reassembleDocument(save(document, titleListTemplate).getId());
+    }
+
+    public void createTableOfContents(Long projectId) {
+        DocumentDto document = DocumentDto.builder()
+                .projectId(projectId)
+                .code("СТ")
+                .numberInProject(3)
+                .typeId(DocumentType.TABLE_OF_CONTENTS.getId())
+                .name("Состав тома")
+                .reassemblyRequired(true)
+                .editTime(LocalDateTime.now())
+                .build();
+        byte[] titleListTemplate = documentTypeService.getDocumentTemplateByTypeId(document.getTypeId()).get(0);
+        reassembleDocument(save(document, titleListTemplate).getId());
     }
 
     public DocumentDto save(DocumentDto documentForSave, byte[] documentTemplate) {
@@ -50,14 +80,68 @@ public class DocumentService {
         return new DocumentDto(documentRepository.createTransactional(documentEntity));
     }
 
-    private void reassembleCoverPage(Long documentId) {
+    public DocumentDto reassembleDocument(Long documentId) {
         DocumentEntity document = documentRepository.fetchByIdTransactional(documentId);
         if (document.getReassemblyRequired()) {
-            byte[] contentInPdf = documentRepository.fetchContentInPdfByDocumentId(document.getId());
-            PdfDocumentGenerator coverPageGenerator = new PdfDocumentGenerator(contentInPdf);
-            byte[] coverPageInPdf = coverPageGenerator.getFilledA4CoverDocument(getDocumentDataForPdf(document)).getPdfDocumentInBytes();
-            documentRepository.updateDocumentInPdfTransactional(documentId, coverPageInPdf);
+            if (document.getDocumentType().equals(DocumentType.COVER_PAGE)) {
+                return new DocumentDto(reassembleCoverPage(document));
+            }
+            if (document.getDocumentType().equals(DocumentType.TITLE_PAGE)) {
+                return new DocumentDto(reassembleTitlePage(document));
+            }
+            if (document.getDocumentType().equals(DocumentType.TABLE_OF_CONTENTS)) {
+                return new DocumentDto(reassembleTableOfContents(document));
+            }
+            if (document.getDocumentType().equals(DocumentType.GENERAL_INFORMATION)) {
+                return new DocumentDto(reassembleGeneralInformation(document));
+            }
+            if (document.getDocumentType().equals(DocumentType.DRAWING)) {
+                return new DocumentDto(reassembleDrawing(document));
+            }
+            String message = String.format("Wrong type of document %s", document.getDocumentType());
+            log.debug(message);
+            throw new CustomApplicationException(message);
         }
+        return getById(documentId);
+    }
+
+    private DocumentEntity reassembleCoverPage(DocumentEntity document) {
+        byte[] contentInPdf = documentRepository.fetchContentInPdfByDocumentId(document.getId());
+        PdfDocumentGenerator coverPageGenerator = new PdfDocumentGenerator(contentInPdf);
+        byte[] coverPageInPdf = coverPageGenerator.getFilledA4CoverDocument(getDocumentDataForPdf(document)).getPdfDocumentInBytes();
+        return documentRepository.updateDocumentInPdfTransactional(document.getId(), coverPageInPdf);
+    }
+
+    private DocumentEntity reassembleTitlePage(DocumentEntity document) {
+        byte[] contentInPdf = documentRepository.fetchContentInPdfByDocumentId(document.getId());
+        PdfDocumentGenerator coverPageGenerator = new PdfDocumentGenerator(contentInPdf);
+        byte[] titlePageInPdf = coverPageGenerator.getFilledA4TitleListDocument(getDocumentDataForPdf(document)).getPdfDocumentInBytes();
+        return documentRepository.updateDocumentInPdfTransactional(document.getId(), titlePageInPdf);
+    }
+
+    private DocumentEntity reassembleTableOfContents(DocumentEntity document) {
+        byte[] firstPageTemplate = documentTypeService.getDocumentTemplateByTypeId(document.getDocumentType().getId()).get(0);
+        byte[] generalPageTemplate = documentTypeService.getDocumentTemplateByTypeId(document.getDocumentType().getId()).get(1);
+        List<DocumentEntity> documentEntities = documentRepository.fetchAllByProjectIdTransactional(document.getProject().getId());
+        List<RowOfContentsDocument> rows = documentEntities.stream().filter(x -> !DocumentType.COVER_PAGE.equals(x.getDocumentType()))
+                .map(x -> RowOfContentsDocument.builder()
+                        .column1(getFullCode(x))
+                        .column2(x.getName())
+                        .column3("")
+                        .build())
+                .toList();
+        PdfDocumentGenerator tableOfContentsGenerator = new PdfDocumentGenerator(firstPageTemplate);
+        byte[] tableOfContentsInPdf = tableOfContentsGenerator.getFilledContentsDocument(rows, generalPageTemplate).getFilledTextDocumentTitleBlock(getDocumentDataForPdf(document)).getPdfDocumentInBytes();
+        documentRepository.updateContentInPdfTransactional(document.getId(), tableOfContentsInPdf);
+        return documentRepository.updateDocumentInPdfTransactional(document.getId(), tableOfContentsInPdf);
+    }
+
+    private DocumentEntity reassembleGeneralInformation(DocumentEntity document) {
+        return new DocumentEntity();
+    }
+
+    private DocumentEntity reassembleDrawing(DocumentEntity document) {
+        return new DocumentEntity();
     }
 
     private DocumentDataForPdf getDocumentDataForPdf(DocumentEntity document) {
@@ -116,14 +200,19 @@ public class DocumentService {
         }
         return documents.stream().
                 filter(Objects::nonNull).
-                map(d -> {DocumentDto documentDto = new DocumentDto(d);
-                documentDto.setDocumentFullCode(getFullCode(d));
-                return documentDto;}).
+                map(d -> {
+                    DocumentDto documentDto = new DocumentDto(d);
+                    documentDto.setDocumentFullCode(getFullCode(d));
+                    return documentDto;
+                }).
                 collect(Collectors.toList());
     }
 
     public DocumentDto getById(Long documentId) {
-        return new DocumentDto(documentRepository.fetchByIdTransactional(documentId));
+        DocumentEntity documentEntity = documentRepository.fetchByIdTransactional(documentId);
+        DocumentDto documentDto = new DocumentDto(documentEntity);
+        documentDto.setDocumentFullCode(getFullCode(documentEntity));
+        return documentDto;
     }
 
     private DocumentEntity getEmpty() {

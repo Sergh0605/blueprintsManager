@@ -21,7 +21,7 @@ public class DocumentTypeRepository {
 
     public List<byte[]> fetchPdfTemplatesByIdTransactional(Long typeId) {
         String getTemplatesByTypeIdSql =
-                "SELECT encode(first_page_template, 'escape') as firstPage , encode(general_page_template, 'escape') as generalPage " +
+                "SELECT first_page_template as firstPage , general_page_template as generalPage " +
                         "FROM bpm_document_type " +
                         "WHERE id = ? ";
         try (Connection connection = dataSource.getConnection();
@@ -46,6 +46,35 @@ public class DocumentTypeRepository {
         } catch (SQLException e) {
             log.debug(e.getMessage());
             throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
+
+    public void updateTemplateTransactional(Long typeId, byte[] firstPage, byte[] secPage) {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                updateTemplateInPdf(typeId, firstPage, secPage, connection);
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                log.debug(e.getMessage());
+                throw new DataBaseCustomApplicationException("Database unexpected error.");
+            }
+        } catch (SQLException e) {
+            log.debug(e.getMessage());
+            throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
+
+    private void updateTemplateInPdf(Long typeId, byte[] firstPage, byte[] secPage, Connection connection) throws SQLException {
+        String updateFileInDocumentByIdSql =
+                "UPDATE  bpm_document_type SET first_page_template = ?, general_page_template = ? " +
+                        "WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(updateFileInDocumentByIdSql)) {
+            pstmt.setBytes(1, firstPage);
+            pstmt.setBytes(2, secPage);
+            pstmt.setLong(3, typeId);
+            pstmt.executeUpdate();
         }
     }
 }

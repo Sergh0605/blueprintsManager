@@ -66,7 +66,7 @@
             </div>
             <div>
                 <label>Controller</label>
-                <select th:disabled="${disabled}" th:type="number" th:field="*{chiefId}">
+                <select th:disabled="${disabled}" th:type="number" th:field="*{controllerId}">
                     <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
                             th:selected="${user.getId() == project.getControllerId()}"></option>
                 </select>
@@ -140,7 +140,7 @@
                 <td><a th:text="${document.getName()}"></a></td>
                 <td><a th:text="${document.getEditTimeWithFormat()}"></a></td>
                 <td><a th:text="${document.getReassemblyRequired()}"></a></td>
-                <td><a th:href="@{'~/document/' + ${document.getId()}}">EDIT</a></td>
+                <td><a th:href="@{'~/document/view/' + ${document.getId()}}">VIEW</a></td>
                 <td><a th:href="@{'~/document/assemble/' + ${document.getId()}}">ASSEMBLE</a></td>
                 <td><a th:href="@{'~/document/download/' + ${document.getId()}}">DOWNLOAD</a></td>
                 <td><a th:href="@{'~/document/delete/' + ${document.getId()}}">DELETE</a></td>

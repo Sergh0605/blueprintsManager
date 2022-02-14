@@ -1,0 +1,90 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>BlueprintsManager</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous">
+
+</head>
+<body>
+<div class="row row-no-gutters">
+    <table id="table" class="table table-striped table-condensed">
+        <tbody>
+        <tr align="center">
+            <td><a href="/index">PROJECTS</a></td>
+            <td><a href="/company">COMPANIES</a></td>
+            <td><a href="/user">USERS</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div style="padding-left: 5%; padding-right: 5%">
+    <a th:href="@{'~/project/view/' + ${document.getProjectId()}}">
+        <button type="button" class="btn btn-primary">BACK TO PROJECT</button>
+    </a>
+    <a th:href="@{'~/document/download/' + ${document.getId()}}">
+        <button type="button" class="btn btn-primary">DOWNLOAD DOCUMENT</button>
+    </a>
+    <h1 th:text="'DOCUMENT ' + ${document.getName()}"></h1>
+    <h4 th:text="'Last edit at ' + ${document.getEditTimeWithFormat()}"></h4>
+    <p th:if="${document.getReassemblyRequired() == true}" class="alert alert-danger"
+       th:text="'REASSEMBLY REQUIRED'"></p>
+
+    <form action="#" method="post" th:action="@{/document/save}" th:object="${document}">
+        <input th:field="*{id}" th:value="${document.getId()}" hidden>
+        <div>
+            <label>Document Name:</label>
+            <input th:disabled="${disabled}" type="text" th:field="*{name}" th:placeholder="*{getName()}"/>
+        </div>
+        <div>
+            <label>Document Type</label>
+            <select th:disabled="${documentExists}" th:type="number" th:field="*{typeId}">
+                <option th:each="type : ${types}" th:value="${type.getId()}" th:text="${type.toString()}"
+                        th:selected="${type.getId() == document.getTypeId()}"></option>
+            </select>
+        <div>
+            <label>Designer</label>
+            <select th:disabled="${disabled}" th:type="number" th:field="*{designerId}">
+                <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
+                        th:selected="${user.getId() == document.getDesignerId()}"></option>
+            </select>
+        </div>
+        <div>
+            <label>Supervisor</label>
+            <select th:disabled="${disabled}" th:type="number" th:field="*{supervisorId}">
+                <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
+                        th:selected="${user.getId() == document.getSupervisorId()}"></option>
+            </select>
+        </div>
+        <div>
+            <label>Document Full Code:</label>
+            <a th:text="${document.getDocumentFullCode()}"></a>
+        </div>
+        <div>
+            <label>Document Code:</label>
+            <input th:disabled="${disabled}" type="text" th:field="*{code}" th:placeholder="*{getCode()}"/>
+        </div>
+
+        <button th:disabled="${disabled}" type="submit" class="btn btn-primary">SAVE</button>
+</div>
+</form>
+
+<div th:if="${documentExists}">
+    <a th:href="@{'~/document/edit/' + ${document.getId()}}">
+        <button th:disabled="${unmodified}" type="button" class="btn btn-primary">EDIT</button>
+    </a>
+    <a th:href="@{'~/document/assemble/' + ${document.getId()}}">
+        <button type="button" class="btn btn-primary">REASSEMBLE DOCUMENT</button>
+    </a>
+    <a th:href="@{'~/document/delete/' + ${document.getId()}}">
+        <button th:disabled="${unmodified}" type="button" class="btn btn-primary">DELETE DOCUMENT</button>
+    </a>
+</div>
+
+</div>
+</body>
+</html>

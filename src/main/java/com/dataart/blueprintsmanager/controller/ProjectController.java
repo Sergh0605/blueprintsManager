@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 
@@ -20,9 +21,11 @@ public class ProjectController {
     private final UserService userService;
     private final StageService stageService;
     private final DocumentService documentService;
+    private final DocumentTypeService documentTypeService;
 
     @GetMapping(value = {"/", "/index", "/project"})
-    public String index(Model model) {
+    public String index(Model model) throws IOException {
+        //documentTypeService.updatePdfTemplates();
         List<ProjectDto> projects = projectService.getAll();
         model.addAttribute("projects", projects);
         return "index";

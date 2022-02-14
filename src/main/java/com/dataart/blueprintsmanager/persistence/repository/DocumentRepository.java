@@ -31,8 +31,8 @@ public class DocumentRepository {
                     .documentType(DocumentType.getById(resultSet.getLong("typeId")))
                     .name(resultSet.getString("name"))
                     .code(resultSet.getString("code"))
-                    .designer(getUser((Long)resultSet.getObject("designerId"), connection))
-                    .supervisor(getUser((Long)resultSet.getObject("supervisorId"), connection))
+                    .designer(getUser((Long) resultSet.getObject("designerId"), connection))
+                    .supervisor(getUser((Long) resultSet.getObject("supervisorId"), connection))
                     .reassemblyRequired(resultSet.getBoolean("reassembly"))
                     .editTime(resultSet.getTimestamp("editTime").toLocalDateTime())
                     .build();
@@ -42,7 +42,7 @@ public class DocumentRepository {
         }
     }
 
-    private UserEntity getUser(Long userId, Connection connection){
+    private UserEntity getUser(Long userId, Connection connection) {
         return Optional.ofNullable(userId).map(x -> userRepository.fetchById(x, connection)).orElse(null);
     }
 
@@ -160,6 +160,7 @@ public class DocumentRepository {
             }
         }
     }
+
     public void updateContentInPdfTransactional(Long documentId, byte[] documentInPdf) {
         String updateContentInDocumentByIdSql =
                 "UPDATE  bpm_document SET content_in_pdf = ? " +
@@ -184,19 +185,16 @@ public class DocumentRepository {
         }
     }
 
-    public void updateDocumentInPdfTransactional(Long documentId, byte[] documentInPdf) {
-        String updateFileInDocumentByIdSql =
-                "UPDATE  bpm_document SET document_in_pdf = ?, reassembly_required = false " +
-                        "WHERE id = ?";
+    public DocumentEntity updateDocumentInPdfTransactional(Long documentId, byte[] documentInPdf) {
         try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
             try {
                 log.debug(String.format("Try to update Document file in PDF with id = %d", documentId));
-                try (PreparedStatement pstmt = connection.prepareStatement(updateFileInDocumentByIdSql)) {
-                    pstmt.setBytes(1, documentInPdf);
-                    pstmt.setLong(2, documentId);
-                    pstmt.executeUpdate();
-                    log.debug(String.format("Document in PDF updated in Document with id = %d", documentId));
-                }
+                updateDocumentInPdf(documentId, documentInPdf, connection);
+                DocumentEntity documentEntity = fetchById(documentId, connection);
+                connection.commit();
+                log.debug(String.format("Document in PDF updated in Document with id = %d", documentId));
+                return documentEntity;
             } catch (SQLException e) {
                 connection.rollback();
                 log.debug(e.getMessage());
@@ -208,11 +206,22 @@ public class DocumentRepository {
         }
     }
 
+    public void updateDocumentInPdf(Long documentId, byte[] documentInPdf, Connection connection) throws SQLException {
+        String updateFileInDocumentByIdSql =
+                "UPDATE  bpm_document SET document_in_pdf = ?, reassembly_required = false " +
+                        "WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(updateFileInDocumentByIdSql)) {
+            pstmt.setBytes(1, documentInPdf);
+            pstmt.setLong(2, documentId);
+            pstmt.executeUpdate();
+        }
+    }
+
     public byte[] fetchContentInPdfByDocumentId(Long documentId) {
         try (Connection connection = dataSource.getConnection()) {
             log.debug(String.format("Try to find Content in PDF for Document with id = %d", documentId));
             String getContentInPdfSql =
-                    "SELECT content_in_pdf " +
+                    "SELECT content_in_pdf as contentInPdf " +
                             "FROM bpm_document " +
                             "WHERE id = ?";
             try (PreparedStatement pstmt = connection.prepareStatement(getContentInPdfSql)) {

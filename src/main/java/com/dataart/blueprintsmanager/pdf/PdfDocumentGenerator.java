@@ -3,6 +3,8 @@ package com.dataart.blueprintsmanager.pdf;
 import com.dataart.blueprintsmanager.exceptions.PdfCustomApplicationException;
 import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.image.ImageDataFactory;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.events.PdfDocumentEvent;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.Rectangle;
@@ -10,11 +12,11 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Image;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Text;
+import com.itextpdf.layout.borders.SolidBorder;
+import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.properties.VerticalAlignment;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 import java.util.*;
 
 import static com.dataart.blueprintsmanager.pdf.PdfUtils.millimetersToPoints;
@@ -53,6 +56,49 @@ public class PdfDocumentGenerator {
         relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.CoverStage, stamp.getStageForCover().toUpperCase(Locale.ROOT));
         relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.CoverVolumeNumber, "Том " + stamp.getVolumeNumber());
         relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.CoverVolumeCode, stamp.getCodeForCover());
+        return relativeFieldAreasWithData;
+    }
+
+    private Map<DocumentRelativeFieldAreas, Object> getRelativeFieldAreasWithDataForTitleListDocument(DocumentDataForPdf stamp) {
+        Map<DocumentRelativeFieldAreas, Object> relativeFieldAreasWithData = new HashMap<>();
+        if (stamp.getCompany() != null) {
+            relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.TitleListSignerPosition, stamp.getCompany().getSignerPosition());
+            relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.TitleListSignerName, stamp.getCompany().getSignerName());
+            relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.TitleListSignerCompany, stamp.getCompany().getName());
+        }
+        String releaseYear = stamp.getReleaseDateForCover() + "г.";
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.TitleListAgreeSignDate, releaseYear);
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.TitleListApproveSignDate, releaseYear);
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.TitleListExecutorSignDate, releaseYear);
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.TitleListProjectName, stamp.getProjectName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.TitleListVolumeCode, stamp.getCodeForCover());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.TitleListStage, stamp.getStageForCover().toUpperCase(Locale.ROOT));
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.TitleListVolumeName, String.format("Том %d. %s", stamp.getVolumeNumber(), stamp.getVolumeName()));
+        return relativeFieldAreasWithData;
+    }
+
+    private Map<DocumentRelativeFieldAreas, Object> getRelativeFieldAreasWithDataForTextDocumentTitleBlock(DocumentDataForPdf stamp) {
+        Map<DocumentRelativeFieldAreas, Object> relativeFieldAreasWithData = new HashMap<>();
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallMainCodeInFirstPage, stamp.getDocumentCode());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.MainCodeInSecondPage, stamp.getDocumentCode());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallDocumentName, stamp.getDocumentName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallPageNumberInFirstPage, "");
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.PageNumberInSecondPage, "");
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallTotalPagesCountInFirstPage, "");
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallDesigner, stamp.getDesignerName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.Controller, stamp.getControllerName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ChiefEngineer, stamp.getChiefEngineerName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallSupervisor, stamp.getSupervisorName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallStage, stamp.getStage());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.CompanyName, stamp.getCompany());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallDesignerDate, stamp.getReleaseDate());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallSupervisorDate, stamp.getReleaseDate());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ChiefEngineerDate, stamp.getReleaseDate());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ControllerDate, stamp.getReleaseDate());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallDesignerSign, stamp.getDesignerSign());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallSupervisorSign, stamp.getSupervisorSign());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ChiefEngineerSign, stamp.getChiefEngineerSign());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ControllerSign, stamp.getControllerSign());
         return relativeFieldAreasWithData;
     }
 
@@ -200,6 +246,114 @@ public class PdfDocumentGenerator {
             }
         }
         return filledFields;
+    }
+
+    public PdfDocumentGenerator getFilledA4TitleListDocument(DocumentDataForPdf inputStamp) {
+        return getFilledDocument(getRelativeFieldAreasWithDataForTitleListDocument(inputStamp));
+    }
+
+    public PdfDocumentGenerator getFilledContentsDocument(List<RowOfContentsDocument> rowsOfDocument, byte[] secondPageTemplate) {
+        int countOfNewPages = getCountOfNewPages(getFilledTableForContentsDocument(rowsOfDocument));
+        byte[] documentWithAddedPages = getDocumentWithAddedPages(countOfNewPages, secondPageTemplate);
+        try (PdfReader reader = new PdfReader(new ByteArrayInputStream(documentWithAddedPages));
+             ByteArrayOutputStream os = new ByteArrayOutputStream();
+             PdfWriter writer = new PdfWriter(os);
+             PdfDocument pdfDoc = new PdfDocument(reader, writer);
+             Document document = new Document(pdfDoc)) {
+            document.setRenderer(new A4TextDocumentRenderer(document));
+            document.add(getFilledTableForContentsDocument(rowsOfDocument));
+            document.close();
+            return new PdfDocumentGenerator(os.toByteArray());
+        } catch (java.io.IOException e) {
+            log.debug(e.getMessage());
+            throw new PdfCustomApplicationException("Can't read PDF Template");
+        }
+    }
+
+    private int getCountOfNewPages(IBlockElement element) {
+        try (PdfReader reader = new PdfReader(new ByteArrayInputStream(pdfDocumentInBytes));
+             ByteArrayOutputStream os = new ByteArrayOutputStream();
+             PdfWriter writer = new PdfWriter(os);
+             PdfDocument pdfDoc = new PdfDocument(reader, writer);
+             Document document = new Document(pdfDoc)) {
+            if (pdfDoc.getNumberOfPages() > 0) {
+                CustomDocumentHandler handler = new CustomDocumentHandler();
+                pdfDoc.addEventHandler(PdfDocumentEvent.START_PAGE, handler);
+                document.setRenderer(new A4TextDocumentRenderer(document));
+                document.add(element);
+                document.close();
+                return handler.getCountOfNewPages();
+            } else throw new PdfCustomApplicationException("Wrong page count");
+        } catch (java.io.IOException e) {
+            log.debug(e.getMessage());
+            throw new PdfCustomApplicationException("Can't read PDF Template");
+        }
+    }
+
+    private Table getFilledTableForContentsDocument(List<RowOfContentsDocument> rowsOfDocument) {
+        float[] columnWidth = {millimetersToPoints(60), millimetersToPoints(95), millimetersToPoints(30)};
+        Table table = new Table(UnitValue.createPointArray(columnWidth));
+        Cell[] header = new Cell[]{
+                getContentsCell("Обозначение").setMinHeight(millimetersToPoints(15)).setFontSize(millimetersToPoints(5)),
+                getContentsCell("Наименование").setMinHeight(millimetersToPoints(15)).setFontSize(millimetersToPoints(5)),
+                getContentsCell("Примечание").setMinHeight(millimetersToPoints(15)).setFontSize(millimetersToPoints(5))
+        };
+        for (Cell h : header) {
+            table.addHeaderCell(h);
+        }
+        for (RowOfContentsDocument rowOfContentsDocument : rowsOfDocument) {
+            table.addCell(getContentsCell(rowOfContentsDocument.getColumn1()));
+            table.addCell(getContentsCell(rowOfContentsDocument.getColumn2()).setTextAlignment(TextAlignment.LEFT));
+            table.addCell(getContentsCell(rowOfContentsDocument.getColumn3()));
+        }
+        return table;
+    }
+
+    private byte[] getDocumentWithAddedPages(int countOfAddedPages, byte[] pageTemplate) {
+        try (PdfReader reader = new PdfReader(new ByteArrayInputStream(pdfDocumentInBytes));
+             PdfReader templateReader = new PdfReader(new ByteArrayInputStream(pageTemplate));
+             ByteArrayOutputStream os = new ByteArrayOutputStream();
+             PdfWriter writer = new PdfWriter(os);
+             PdfDocument pdfDoc = new PdfDocument(reader, writer.setSmartMode(true));
+             PdfDocument templatePdfDoc = new PdfDocument(templateReader)) {
+            if (pdfDoc.getNumberOfPages() == 1 && templatePdfDoc.getNumberOfPages() == 1) {
+                int templatePageNumber = templatePdfDoc.getNumberOfPages();
+                for (int i = 0; i < countOfAddedPages; i++) {
+                    templatePdfDoc.copyPagesTo(templatePageNumber, templatePageNumber, pdfDoc);
+                }
+                pdfDoc.close();
+                return os.toByteArray();
+            } else {
+                String message = "Too many pages in template PDF";
+                log.debug(message);
+                throw new PdfCustomApplicationException(message);
+            }
+        } catch (java.io.IOException e) {
+            log.debug(e.getMessage());
+            throw new PdfCustomApplicationException("Can't read template PDF");
+        }
+    }
+
+    private Cell getContentsCell(String cellContent) {
+        PdfFont localFont = null;
+        try {
+            localFont = PdfFontFactory.createFont(GostA, "Identity-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+        } catch (java.io.IOException e) {
+            log.debug(e.getMessage());
+            throw new PdfCustomApplicationException("Can't find font file");
+        }
+        return new Cell()
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setFont(localFont)
+                .setFontSize(millimetersToPoints(3))
+                .setMinHeight(millimetersToPoints(8))
+                .setBorder(new SolidBorder(ColorConstants.BLACK, millimetersToPoints(0.25f)))
+                .add(new Paragraph(cellContent).setItalic());
+    }
+
+    public PdfDocumentGenerator getFilledTextDocumentTitleBlock(DocumentDataForPdf inputStamp) {
+        return getFilledDocument(getRelativeFieldAreasWithDataForTextDocumentTitleBlock(inputStamp));
     }
 
 }
