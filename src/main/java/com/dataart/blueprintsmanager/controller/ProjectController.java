@@ -2,6 +2,7 @@ package com.dataart.blueprintsmanager.controller;
 
 import com.dataart.blueprintsmanager.dto.*;
 import com.dataart.blueprintsmanager.exceptions.CustomApplicationException;
+import com.dataart.blueprintsmanager.persistence.entity.DocumentType;
 import com.dataart.blueprintsmanager.service.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +57,12 @@ public class ProjectController {
         return getProjectPage(project, model, companyId, false, false);
     }
 
+    @GetMapping(value = {"/project/delete/{projectId}"})
+    public String deleteProject(@PathVariable Long projectId, Model model) {
+        projectService.deleteById(projectId);
+        return "redirect:/project";
+    }
+
     @PostMapping("/project/save")
     public String saveProject(@ModelAttribute("project") ProjectDto project) {
         Long projectId;
@@ -65,11 +72,13 @@ public class ProjectController {
         return "redirect:/project/view/" + projectId;
     }
 
+
     private String getProjectPage(ProjectDto project, Model model, Long companyId, boolean fieldsIsDisabled, boolean projectExists) {
         List<CompanyDto> companies = companyService.getAll();
         List<UserDto> users = userService.getAllByCompanyId(companyId);
         List<StageDto> stages = stageService.getAll();
         List<DocumentDto> documents = documentService.getAllByProjectId(project.getId());
+        List<DocumentType> unmodifiedTypes = documentTypeService.getAllUnmodified();
         model.addAttribute("documents", documents);
         model.addAttribute("disabled", fieldsIsDisabled);
         model.addAttribute("projectExists", projectExists);
@@ -77,6 +86,7 @@ public class ProjectController {
         model.addAttribute("users", users);
         model.addAttribute("companies", companies);
         model.addAttribute("stages", stages);
+        model.addAttribute("unmodifiedTypes", unmodifiedTypes);
         return "project";
     }
 

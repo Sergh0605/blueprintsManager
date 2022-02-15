@@ -63,7 +63,7 @@ public class DocumentController {
         List<DocumentType> documentTypes = documentTypeService.getAll();
         if (document.getDesignerId() == null) document.setDesignerId(project.getDesignerId());
         if (document.getSupervisorId() == null) document.setSupervisorId(project.getSupervisorId());
-        boolean unmodified = documentTypeService.getAllUnmodified().contains(DocumentType.getById(document.getTypeId()));
+        boolean unmodified = documentTypeService.getAllUnmodified().contains(document.getType());
         model.addAttribute("document", document);
         model.addAttribute("disabled", fieldsIsDisabled);
         model.addAttribute("documentExists", documentExists);

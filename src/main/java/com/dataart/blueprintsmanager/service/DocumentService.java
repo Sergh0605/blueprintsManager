@@ -34,12 +34,12 @@ public class DocumentService {
                 .projectId(projectId)
                 .code("О")
                 .numberInProject(1)
-                .typeId(DocumentType.COVER_PAGE.getId())
+                .type(DocumentType.COVER_PAGE)
                 .name("Обложка")
                 .reassemblyRequired(true)
                 .editTime(LocalDateTime.now())
                 .build();
-        byte[] coverPageTemplate = documentTypeService.getDocumentTemplateByTypeId(document.getTypeId()).get(0);
+        byte[] coverPageTemplate = documentTypeService.getDocumentTemplateByTypeId(document.getType().getId()).get(0);
         reassembleDocument(save(document, coverPageTemplate).getId());
     }
 
@@ -48,12 +48,12 @@ public class DocumentService {
                 .projectId(projectId)
                 .code("ТЛ")
                 .numberInProject(2)
-                .typeId(DocumentType.TITLE_PAGE.getId())
+                .type(DocumentType.TITLE_PAGE)
                 .name("Титульный лист")
                 .reassemblyRequired(true)
                 .editTime(LocalDateTime.now())
                 .build();
-        byte[] titleListTemplate = documentTypeService.getDocumentTemplateByTypeId(document.getTypeId()).get(0);
+        byte[] titleListTemplate = documentTypeService.getDocumentTemplateByTypeId(document.getType().getId()).get(0);
         reassembleDocument(save(document, titleListTemplate).getId());
     }
 
@@ -62,12 +62,12 @@ public class DocumentService {
                 .projectId(projectId)
                 .code("СТ")
                 .numberInProject(3)
-                .typeId(DocumentType.TABLE_OF_CONTENTS.getId())
+                .type(DocumentType.TABLE_OF_CONTENTS)
                 .name("Состав тома")
                 .reassemblyRequired(true)
                 .editTime(LocalDateTime.now())
                 .build();
-        byte[] titleListTemplate = documentTypeService.getDocumentTemplateByTypeId(document.getTypeId()).get(0);
+        byte[] titleListTemplate = documentTypeService.getDocumentTemplateByTypeId(document.getType().getId()).get(0);
         reassembleDocument(save(document, titleListTemplate).getId());
     }
 
@@ -103,14 +103,14 @@ public class DocumentService {
     }
 
     private DocumentEntity reassembleCoverPage(DocumentEntity document) {
-        byte[] contentInPdf = documentRepository.fetchContentInPdfByDocumentId(document.getId());
+        byte[] contentInPdf = documentRepository.fetchContentInPdfByDocumentIdTransactional(document.getId());
         PdfDocumentGenerator coverPageGenerator = new PdfDocumentGenerator(contentInPdf);
         byte[] coverPageInPdf = coverPageGenerator.getFilledA4CoverDocument(getDocumentDataForPdf(document)).getPdfDocumentInBytes();
         return documentRepository.updateDocumentInPdfTransactional(document.getId(), coverPageInPdf);
     }
 
     private DocumentEntity reassembleTitlePage(DocumentEntity document) {
-        byte[] contentInPdf = documentRepository.fetchContentInPdfByDocumentId(document.getId());
+        byte[] contentInPdf = documentRepository.fetchContentInPdfByDocumentIdTransactional(document.getId());
         PdfDocumentGenerator coverPageGenerator = new PdfDocumentGenerator(contentInPdf);
         byte[] titlePageInPdf = coverPageGenerator.getFilledA4TitleListDocument(getDocumentDataForPdf(document)).getPdfDocumentInBytes();
         return documentRepository.updateDocumentInPdfTransactional(document.getId(), titlePageInPdf);
@@ -251,7 +251,7 @@ public class DocumentService {
 
     public DocumentDto getFileForDownload(Long documentId) {
         DocumentEntity document = documentRepository.fetchByIdTransactional(documentId);
-        byte[] documentInPdf = documentRepository.fetchDocumentInPdfByDocumentId(documentId);
+        byte[] documentInPdf = documentRepository.fetchDocumentInPdfByDocumentIdTransactional(documentId);
         StringBuilder documentFileName = new StringBuilder();
         documentFileName
                 .append(getFullCode(document))
@@ -279,6 +279,10 @@ public class DocumentService {
     }
 
     public byte[] getInPdfById(Long id) {
-        return documentRepository.fetchDocumentInPdfByDocumentId(id);
+        return documentRepository.fetchDocumentInPdfByDocumentIdTransactional(id);
+    }
+
+    public void deleteProject(Long projectId) {
+        documentRepository.deleteProjectTransactional(projectId);
     }
 }

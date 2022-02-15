@@ -23,7 +23,7 @@ public class DocumentDto {
     private Long id;
     private Long projectId;
     private Integer numberInProject;
-    private Long typeId;
+    private DocumentType type;
     private String name;
     private String code;
     private Long designerId;
@@ -43,7 +43,7 @@ public class DocumentDto {
             this.id = document.getId();
             this.projectId = Optional.ofNullable(document.getProject()).map(ProjectEntity::getId).orElse(null);
             this.numberInProject = document.getNumberInProject();
-            this.typeId = Optional.ofNullable(document.getDocumentType()).map(DocumentType::getId).orElse(null);
+            this.type = document.getDocumentType();
             this.name = document.getName();
             this.code = document.getCode();
             this.designerId = Optional.ofNullable(document.getDesigner()).map(UserEntity::getId).orElse(null);
@@ -59,7 +59,7 @@ public class DocumentDto {
                 .name(Optional.ofNullable(this.name).orElse(entity.getName()))
                 .project(Optional.ofNullable(this.projectId).map(x -> ProjectEntity.builder().id(x).build()).orElse(entity.getProject()))
                 .numberInProject(Optional.ofNullable(this.numberInProject).orElse(entity.getNumberInProject()))
-                .documentType(Optional.ofNullable(this.typeId).map(DocumentType::getById).orElse(entity.getDocumentType()))
+                .documentType(Optional.ofNullable(this.type).orElse(entity.getDocumentType()))
                 .code(Optional.ofNullable(this.code).orElse(entity.getCode()))
                 .designer(Optional.ofNullable(this.designerId).map(x -> UserEntity.builder().id(x).build()).orElse(entity.getDesigner()))
                 .supervisor(Optional.ofNullable(this.supervisorId).map(x -> UserEntity.builder().id(x).build()).orElse(entity.getSupervisor()))

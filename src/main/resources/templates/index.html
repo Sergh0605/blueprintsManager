@@ -55,7 +55,7 @@
             </td>
             <td>
                 <a th:href="@{'~/project/assemble/' + ${project.getId()}}">
-                    <button type="button" class="btn btn-warning">ASSEMBLE</button>
+                    <button th:disabled="${!project.getReassemblyRequired()}" type="button" class="btn btn-warning">ASSEMBLE</button>
                 </a>
             </td>
             <td><a th:href="@{'~/project/download/' + ${project.getId()}}">

@@ -69,7 +69,7 @@ public class ProjectRepository {
                         "supervisor_id as supervisorId, chief_id as chiefId, controller_id as controllerId, " +
                         "company_id as companyId, stage_id as stageId, reassembly_required as reassembly, edit_time as editTime " +
                         "FROM bpm_project " +
-                        "WHERE deleted = 'false' " +
+                        "WHERE deleted = false " +
                         "ORDER BY editTime DESC";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(getAllProjectsSql);
@@ -109,7 +109,7 @@ public class ProjectRepository {
                         "supervisor_id as supervisorId, chief_id as chiefId, controller_id as controllerId, " +
                         "company_id as companyId, stage_id as stageId, reassembly_required as reassembly, edit_time as editTime " +
                         "FROM bpm_project " +
-                        "WHERE deleted = 'false' AND  id = ?";
+                        "WHERE deleted = false AND  id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(getProjectByIdSql)) {
             pstmt.setLong(1, projectId);
             try (ResultSet resultSet = pstmt.executeQuery()) {
@@ -274,7 +274,7 @@ public class ProjectRepository {
         }
     }
 
-    public byte[] fetchProjectInPdfByDocumentId(Long projectId) {
+    public byte[] fetchProjectInPdfByProjectIdTransactional(Long projectId) {
         try (Connection connection = dataSource.getConnection()) {
             log.debug(String.format("Try to find Project in PDF for Document with id = %d", projectId));
             String getContentInPdfSql =
@@ -302,6 +302,19 @@ public class ProjectRepository {
         } catch (SQLException e) {
             log.debug(e.getMessage());
             throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
+
+    protected int deleteById(Long projectId, Connection connection) {
+        log.debug(String.format("Try to set deleted Project with id = %d", projectId));
+        String setDeleteByProjectIdSql =
+                "UPDATE  bpm_project SET deleted = true, reassembly_required = false " +
+                        "WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(setDeleteByProjectIdSql)) {
+            pstmt.setLong(1, projectId);
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }

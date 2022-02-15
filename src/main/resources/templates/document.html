@@ -42,9 +42,9 @@
         </div>
         <div>
             <label>Document Type</label>
-            <select th:disabled="${documentExists}" th:type="number" th:field="*{typeId}">
-                <option th:each="type : ${types}" th:value="${type.getId()}" th:text="${type.toString()}"
-                        th:selected="${type.getId() == document.getTypeId()}"></option>
+            <select th:disabled="${documentExists}" th:type="number" th:field="*{type}">
+                <option th:each="type : ${types}" th:value="${type}" th:text="${type.toString()}"
+                        th:selected="${type == document.getType()}"></option>
             </select>
         <div>
             <label>Designer</label>
@@ -78,7 +78,7 @@
         <button th:disabled="${unmodified}" type="button" class="btn btn-primary">EDIT</button>
     </a>
     <a th:href="@{'~/document/assemble/' + ${document.getId()}}">
-        <button type="button" class="btn btn-warning">REASSEMBLE DOCUMENT</button>
+        <button th:disabled="${!document.getReassemblyRequired()}" type="button" class="btn btn-warning">REASSEMBLE DOCUMENT</button>
     </a>
     <a th:href="@{'~/document/delete/' + ${document.getId()}}">
         <button th:disabled="${unmodified}" type="button" class="btn btn-danger">DELETE DOCUMENT</button>

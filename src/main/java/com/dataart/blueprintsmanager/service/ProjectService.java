@@ -96,17 +96,14 @@ public class ProjectService {
 
     public ProjectDto getFileForDownload(Long projectId) {
         ProjectEntity project = projectRepository.fetchByIdTransactional(projectId);
-        byte[] documentInPdf = projectRepository.fetchProjectInPdfByDocumentId(projectId);
-        StringBuilder projectFileName = new StringBuilder();
-        projectFileName
-                .append(project.getCode())
-                .append("_Том")
-                .append(project.getVolumeNumber())
-                .append("_")
-                .append(project.getVolumeName())
-                .append(".pdf");
+        byte[] documentInPdf = projectRepository.fetchProjectInPdfByProjectIdTransactional(projectId);
+        String projectFileName = "%s_Том%d_%s.pdf".formatted(project.getCode(), project.getVolumeNumber(), project.getVolumeName());
         return ProjectDto.builder()
-                .projectInPdfFileName(projectFileName.toString())
+                .projectInPdfFileName(projectFileName)
                 .projectInPdf(documentInPdf).build();
+    }
+
+    public void deleteById(Long projectId) {
+        documentService.deleteProject(projectId);
     }
 }

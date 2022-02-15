@@ -78,10 +78,16 @@ public class DocumentRepository {
     public DocumentEntity fetchByIdTransactional(Long documentId) {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            DocumentEntity documentEntity = fetchById(documentId, connection);
-            connection.commit();
-            log.debug(String.format("Document with id = %d found", documentId));
-            return documentEntity;
+            try {
+                DocumentEntity documentEntity = fetchById(documentId, connection);
+                connection.commit();
+                log.debug(String.format("Document with id = %d found", documentId));
+                return documentEntity;
+            } catch (SQLException e) {
+                connection.rollback();
+                log.debug(e.getMessage());
+                throw new DataBaseCustomApplicationException("Database unexpected error.");
+            }
         } catch (SQLException e) {
             log.debug(e.getMessage());
             throw new DataBaseCustomApplicationException("Database connection error.");
@@ -206,7 +212,7 @@ public class DocumentRepository {
         }
     }
 
-    public void updateDocumentInPdf(Long documentId, byte[] documentInPdf, Connection connection) throws SQLException {
+    private void updateDocumentInPdf(Long documentId, byte[] documentInPdf, Connection connection) throws SQLException {
         String updateFileInDocumentByIdSql =
                 "UPDATE  bpm_document SET document_in_pdf = ?, reassembly_required = false " +
                         "WHERE id = ?";
@@ -217,7 +223,7 @@ public class DocumentRepository {
         }
     }
 
-    public byte[] fetchContentInPdfByDocumentId(Long documentId) {
+    public byte[] fetchContentInPdfByDocumentIdTransactional(Long documentId) {
         try (Connection connection = dataSource.getConnection()) {
             log.debug(String.format("Try to find Content in PDF for Document with id = %d", documentId));
             String getContentInPdfSql =
@@ -242,7 +248,7 @@ public class DocumentRepository {
         }
     }
 
-    public byte[] fetchDocumentInPdfByDocumentId(Long documentId) {
+    public byte[] fetchDocumentInPdfByDocumentIdTransactional(Long documentId) {
         try (Connection connection = dataSource.getConnection()) {
             log.debug(String.format("Try to find Document in PDF for Document with id = %d", documentId));
             String getContentInPdfSql =
@@ -264,6 +270,40 @@ public class DocumentRepository {
         } catch (SQLException e) {
             log.debug(e.getMessage());
             throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
+
+    public void deleteProjectTransactional(Long projectId) {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                log.debug(String.format("Try to delete project with id = %d", projectId));
+                log.debug(String.format("Try to set deleted Documents with Project id = %d", projectId));
+                int countOfDeletedDocuments = deleteByProjectId(projectId, connection);
+                int countOfDeletedProjects = projectRepository.deleteById(projectId, connection);
+                connection.commit();
+                log.debug(String.format("%d Documents with Project id = %d set deleted", countOfDeletedDocuments, projectId));
+                log.debug(String.format("%d Project with id = %d set deleted", countOfDeletedProjects, projectId));
+            } catch (SQLException e) {
+                connection.rollback();
+                log.debug(e.getMessage());
+                throw new DataBaseCustomApplicationException("Database unexpected error.");
+            }
+        } catch (SQLException e) {
+            log.debug(e.getMessage());
+            throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
+
+    private int deleteByProjectId(Long projectId, Connection connection) {
+        String setDeleteByProjectIdSql =
+                "UPDATE  bpm_document SET deleted = true, reassembly_required = false " +
+                        "WHERE project_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(setDeleteByProjectIdSql)) {
+            pstmt.setLong(1, projectId);
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }
