@@ -2,10 +2,10 @@ package com.dataart.blueprintsmanager.controller;
 
 import com.dataart.blueprintsmanager.dto.*;
 import com.dataart.blueprintsmanager.exceptions.CustomApplicationException;
-import com.dataart.blueprintsmanager.persistence.entity.DocumentType;
 import com.dataart.blueprintsmanager.service.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ContentDisposition;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 
@@ -78,7 +79,6 @@ public class ProjectController {
         List<UserDto> users = userService.getAllByCompanyId(companyId);
         List<StageDto> stages = stageService.getAll();
         List<DocumentDto> documents = documentService.getAllByProjectId(project.getId());
-        List<DocumentType> unmodifiedTypes = documentTypeService.getAllUnmodified();
         model.addAttribute("documents", documents);
         model.addAttribute("disabled", fieldsIsDisabled);
         model.addAttribute("projectExists", projectExists);
@@ -86,7 +86,6 @@ public class ProjectController {
         model.addAttribute("users", users);
         model.addAttribute("companies", companies);
         model.addAttribute("stages", stages);
-        model.addAttribute("unmodifiedTypes", unmodifiedTypes);
         return "project";
     }
 
@@ -95,8 +94,10 @@ public class ProjectController {
         ProjectDto project = projectService.getFileForDownload(projectId);
         response.setContentType("application/octet-stream");
         String headerKey = "Content-Disposition";
-        String headerValue = "attachment; filename = " + project.getProjectInPdfFileName();
-        response.setHeader(headerKey, headerValue);
+        ContentDisposition contentDisposition = ContentDisposition.builder("attachment")
+                .filename(project.getProjectInPdfFileName(), StandardCharsets.UTF_8)
+                .build();
+        response.setHeader(headerKey, contentDisposition.toString());
         try (ServletOutputStream outputStream = response.getOutputStream()) {
             outputStream.write(project.getProjectInPdf());
         } catch (IOException e) {

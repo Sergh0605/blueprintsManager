@@ -27,15 +27,17 @@
         <button type="button" class="btn btn-primary">BACK TO PROJECT</button>
     </a>
     <a th:href="@{'~/document/download/' + ${document.getId()}}">
-        <button type="button" class="btn btn-success">DOWNLOAD DOCUMENT</button>
+        <button th:if="${documentExists}" type="button" class="btn btn-success">DOWNLOAD DOCUMENT</button>
     </a>
     <h1 th:text="'DOCUMENT ' + ${document.getName()}"></h1>
     <h4 th:text="'Last edit at ' + ${document.getEditTimeWithFormat()}"></h4>
-    <p th:if="${document.getReassemblyRequired() == true}" class="alert alert-danger"
+    <p th:if="${document.getReassemblyRequired() && documentExists}" class="alert alert-danger"
        th:text="'REASSEMBLY REQUIRED'"></p>
+    <p th:text="${warningMessage}" th:if="${warningMessage ne null}" class="alert alert-danger"></p>
 
-    <form action="#" method="post" th:action="@{/document/save}" th:object="${document}">
+    <form action="#" method="post" th:action="@{/document/save}" th:object="${document}" enctype="multipart/form-data">
         <input th:field="*{id}" th:value="${document.getId()}" hidden>
+        <input th:field="*{projectId}" th:value="${document.getProjectId()}" hidden>
         <div>
             <label>Document Name:</label>
             <input th:disabled="${disabled}" type="text" th:field="*{name}" th:placeholder="*{getName()}"/>
@@ -43,47 +45,61 @@
         <div>
             <label>Document Type</label>
             <select th:disabled="${documentExists}" th:type="number" th:field="*{type}">
-                <option th:each="type : ${types}" th:value="${type}" th:text="${type.toString()}"
-                        th:selected="${type == document.getType()}"></option>
+                <option th:value="${null}" selected hidden>
+                    Please Choose Document Type
+                </option>
+                <option th:each="type : ${types}" th:selected="${type == document.getType()}" th:value="${type}"
+                        th:text="${type.getName()}"
+                        th:disabled="${type.isUnmodified()}"></option>
             </select>
-        <div>
-            <label>Designer</label>
-            <select th:disabled="${disabled}" th:type="number" th:field="*{designerId}">
-                <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
-                        th:selected="${user.getId() == document.getDesignerId()}"></option>
-            </select>
-        </div>
-        <div>
-            <label>Supervisor</label>
-            <select th:disabled="${disabled}" th:type="number" th:field="*{supervisorId}">
-                <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
-                        th:selected="${user.getId() == document.getSupervisorId()}"></option>
-            </select>
-        </div>
-        <div>
-            <label>Document Full Code:</label>
-            <a th:text="${document.getDocumentFullCode()}"></a>
-        </div>
-        <div>
-            <label>Document Code:</label>
-            <input th:disabled="${disabled}" type="text" th:field="*{code}" th:placeholder="*{getCode()}"/>
-        </div>
+            <div>
+                <label>Designer</label>
+                <select th:disabled="${disabled}" th:type="number" th:field="*{designerId}">
+                    <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
+                            th:selected="${user.getId() == document.getDesignerId()}"></option>
+                </select>
+            </div>
+            <div>
+                <label>Supervisor</label>
+                <select th:disabled="${disabled}" th:type="number" th:field="*{supervisorId}">
+                    <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
+                            th:selected="${user.getId() == document.getSupervisorId()}"></option>
+                </select>
+            </div>
+            <div>
+                <label>Document Full Code:</label>
+                <a th:text="${document.getDocumentFullCode()}"></a>
+            </div>
+            <div>
+                <label>Document Code:</label>
+                <input th:disabled="${disabled}" type="text" th:field="*{code}" th:placeholder="*{getCode()}"/>
+            </div>
+            <div th:if="${!documentExists || !document.getType().isUnmodified()}" class="form-group">
+                <label>Select a file for upload</label>
+                <label>*.txt only for General Information and *.pdf only for Drawing</label>
+                <input th:disabled="${disabled}" type="file" name="file" class="form-control-file">
+            </div>
 
-        <button th:disabled="${disabled}" type="submit" class="btn btn-primary">SAVE</button>
-</div>
-</form>
+            <button th:disabled="${disabled}" type="submit" class="btn btn-primary">SAVE</button>
+        </div>
+    </form>
 
-<div th:if="${documentExists}">
-    <a th:href="@{'~/document/edit/' + ${document.getId()}}">
-        <button th:disabled="${unmodified}" type="button" class="btn btn-primary">EDIT</button>
-    </a>
-    <a th:href="@{'~/document/assemble/' + ${document.getId()}}">
-        <button th:disabled="${!document.getReassemblyRequired()}" type="button" class="btn btn-warning">REASSEMBLE DOCUMENT</button>
-    </a>
-    <a th:href="@{'~/document/delete/' + ${document.getId()}}">
-        <button th:disabled="${unmodified}" type="button" class="btn btn-danger">DELETE DOCUMENT</button>
-    </a>
-</div>
+    <div th:if="${documentExists}">
+        <a th:href="@{'~/document/edit/' + ${document.getId()}}">
+            <button th:disabled="${document.getType().isUnmodified()}" type="button" class="btn btn-primary">EDIT
+            </button>
+        </a>
+        <a th:href="@{'~/document/assemble/' + ${document.getId()}}">
+            <button th:disabled="${!document.getReassemblyRequired()}" type="button" class="btn btn-warning">REASSEMBLE
+                DOCUMENT
+            </button>
+        </a>
+        <a th:href="@{'~/document/delete/' + ${document.getId()}}">
+            <button th:disabled="${document.getType().isUnmodified()}" type="button" class="btn btn-danger">DELETE
+                DOCUMENT
+            </button>
+        </a>
+    </div>
 
 </div>
 </body>

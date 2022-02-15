@@ -24,6 +24,7 @@ public class DocumentDto {
     private Long projectId;
     private Integer numberInProject;
     private DocumentType type;
+    private Long typeId;
     private String name;
     private String code;
     private Long designerId;

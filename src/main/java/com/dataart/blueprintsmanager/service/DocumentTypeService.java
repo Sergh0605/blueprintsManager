@@ -40,14 +40,16 @@ public class DocumentTypeService {
         String pathToTitleList = "./src/main/resources/pdfTemplates/A4TitleListTemplate.pdf";
         String pathToTextTemplate = "./src/main/resources/pdfTemplates/A4TextTemplate.pdf";
         String pathToSecondPageTemplatePdf = "./src/main/resources/pdfTemplates/A4GeneralPageTemplate.pdf";
+        String pathToDrawingTemplatePdf = "./src/main/resources/pdfTemplates/A4Drawing2P.pdf";
         byte[] coverPage = Files.readAllBytes(Paths.get(pathToCoverPage));
         byte[] titlePage = Files.readAllBytes(Paths.get(pathToTitleList));
         byte[] textF = Files.readAllBytes(Paths.get(pathToTextTemplate));
         byte[] textS = Files.readAllBytes(Paths.get(pathToSecondPageTemplatePdf));
-        documentTypeRepository.updateTemplateTransactional(1L, coverPage, coverPage);
-        documentTypeRepository.updateTemplateTransactional(2L, titlePage, titlePage);
+        byte[] drawing = Files.readAllBytes(Paths.get(pathToDrawingTemplatePdf));
+        documentTypeRepository.updateTemplateTransactional(1L, coverPage, null);
+        documentTypeRepository.updateTemplateTransactional(2L, titlePage, null);
         documentTypeRepository.updateTemplateTransactional(3L, textF, textS);
         documentTypeRepository.updateTemplateTransactional(4L, textF, textS);
-        documentTypeRepository.updateTemplateTransactional(5L, textF, textS);
+        documentTypeRepository.updateTemplateTransactional(5L, drawing, null);
     }
 }

@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.*;
 
@@ -42,6 +43,54 @@ public class PdfDocumentGenerator {
 
     public PdfDocumentGenerator getFilledA4CoverDocument(DocumentDataForPdf inputStamp) {
         return getFilledDocument(getRelativeFieldAreasWithDataForCoverDocument(inputStamp));
+    }
+
+    public PdfDocumentGenerator getFilledBlueprintDocumentTitleBlock(DocumentDataForPdf inputStamp) {
+        return getFilledDocument(getRelativeFieldAreasWithDataForBlueprintDocumentTitleBlock(inputStamp));
+    }
+
+    public PdfDocumentGenerator getFilledA4TitleListDocument(DocumentDataForPdf inputStamp) {
+        return getFilledDocument(getRelativeFieldAreasWithDataForTitleListDocument(inputStamp));
+    }
+
+    public PdfDocumentGenerator getFilledTextDocumentTitleBlock(DocumentDataForPdf inputStamp) {
+        return getFilledDocument(getRelativeFieldAreasWithDataForTextDocumentTitleBlock(inputStamp));
+    }
+
+    public PdfDocumentGenerator getFilledContentsDocument(List<RowOfContentsDocument> rowsOfDocument, byte[] secondPageTemplate) {
+        int countOfNewPages = getCountOfNewPages(getFilledTableForContentsDocument(rowsOfDocument));
+        byte[] documentWithAddedPages = getDocumentWithAddedPages(countOfNewPages, secondPageTemplate);
+        try (PdfReader reader = new PdfReader(new ByteArrayInputStream(documentWithAddedPages));
+             ByteArrayOutputStream os = new ByteArrayOutputStream();
+             PdfWriter writer = new PdfWriter(os);
+             PdfDocument pdfDoc = new PdfDocument(reader, writer);
+             Document document = new Document(pdfDoc)) {
+            document.setRenderer(new A4TextDocumentRenderer(document));
+            document.add(getFilledTableForContentsDocument(rowsOfDocument));
+            document.close();
+            return new PdfDocumentGenerator(os.toByteArray());
+        } catch (java.io.IOException e) {
+            log.debug(e.getMessage());
+            throw new PdfCustomApplicationException("Can't read PDF Template");
+        }
+    }
+
+    public PdfDocumentGenerator getFilledTextDocument(byte[] text, byte[] secondPageTemplate) {
+        int countOfNewPages = getCountOfNewPages(getFilledParagraphForTextDocument(text));
+        byte[] documentWithAddedPages = getDocumentWithAddedPages(countOfNewPages, secondPageTemplate);
+        try (PdfReader reader = new PdfReader(new ByteArrayInputStream(documentWithAddedPages));
+             ByteArrayOutputStream os = new ByteArrayOutputStream();
+             PdfWriter writer = new PdfWriter(os);
+             PdfDocument pdfDoc = new PdfDocument(reader, writer);
+             Document document = new Document(pdfDoc)) {
+            document.setRenderer(new A4TextDocumentRenderer(document));
+            document.add(getFilledParagraphForTextDocument(text));
+            document.close();
+            return new PdfDocumentGenerator(os.toByteArray());
+        } catch (java.io.IOException e) {
+            log.debug(e.getMessage());
+            throw new PdfCustomApplicationException("Can't read PDF Template");
+        }
     }
 
     private Map<DocumentRelativeFieldAreas, Object> getRelativeFieldAreasWithDataForCoverDocument(DocumentDataForPdf stamp) {
@@ -100,6 +149,39 @@ public class PdfDocumentGenerator {
         relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SmallSupervisorSign, stamp.getSupervisorSign());
         relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ChiefEngineerSign, stamp.getChiefEngineerSign());
         relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ControllerSign, stamp.getControllerSign());
+        return relativeFieldAreasWithData;
+    }
+
+    private Map<DocumentRelativeFieldAreas, Object> getRelativeFieldAreasWithDataForTableDocumentTitleBlock(DocumentDataForPdf stamp) {
+        Map<DocumentRelativeFieldAreas, Object> relativeFieldAreasWithData = new HashMap<>();
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.MainCodeInFirstPage, stamp.getDocumentCode());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.MainCodeInSecondPage, stamp.getDocumentCode());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.DocumentName, stamp.getDocumentName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.Address, stamp.getObjectAddress());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ProjectName, stamp.getProjectName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.PageNumberInFirstPage, "");
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.PageNumberInSecondPage, "");
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.TotalPagesCountInFirstPage, "");
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.Designer, stamp.getDesignerName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.Controller, stamp.getControllerName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ChiefEngineer, stamp.getChiefEngineerName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.Supervisor, stamp.getSupervisorName());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.Stage, stamp.getStage());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.CompanyName, stamp.getCompany());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.DesignerDate, stamp.getReleaseDate());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SupervisorDate, stamp.getReleaseDate());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ChiefEngineerDate, stamp.getReleaseDate());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ControllerDate, stamp.getReleaseDate());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.DesignerSign, stamp.getDesignerSign());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.SupervisorSign, stamp.getSupervisorSign());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ChiefEngineerSign, stamp.getChiefEngineerSign());
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.ControllerSign, stamp.getControllerSign());
+        return relativeFieldAreasWithData;
+    }
+
+    private Map<DocumentRelativeFieldAreas, Object> getRelativeFieldAreasWithDataForBlueprintDocumentTitleBlock(DocumentDataForPdf stamp) {
+        Map<DocumentRelativeFieldAreas, Object> relativeFieldAreasWithData = getRelativeFieldAreasWithDataForTableDocumentTitleBlock(stamp);
+        relativeFieldAreasWithData.put(DocumentRelativeFieldAreas.AdditionalCode, stamp.getDocumentCode());
         return relativeFieldAreasWithData;
     }
 
@@ -249,28 +331,6 @@ public class PdfDocumentGenerator {
         return filledFields;
     }
 
-    public PdfDocumentGenerator getFilledA4TitleListDocument(DocumentDataForPdf inputStamp) {
-        return getFilledDocument(getRelativeFieldAreasWithDataForTitleListDocument(inputStamp));
-    }
-
-    public PdfDocumentGenerator getFilledContentsDocument(List<RowOfContentsDocument> rowsOfDocument, byte[] secondPageTemplate) {
-        int countOfNewPages = getCountOfNewPages(getFilledTableForContentsDocument(rowsOfDocument));
-        byte[] documentWithAddedPages = getDocumentWithAddedPages(countOfNewPages, secondPageTemplate);
-        try (PdfReader reader = new PdfReader(new ByteArrayInputStream(documentWithAddedPages));
-             ByteArrayOutputStream os = new ByteArrayOutputStream();
-             PdfWriter writer = new PdfWriter(os);
-             PdfDocument pdfDoc = new PdfDocument(reader, writer);
-             Document document = new Document(pdfDoc)) {
-            document.setRenderer(new A4TextDocumentRenderer(document));
-            document.add(getFilledTableForContentsDocument(rowsOfDocument));
-            document.close();
-            return new PdfDocumentGenerator(os.toByteArray());
-        } catch (java.io.IOException e) {
-            log.debug(e.getMessage());
-            throw new PdfCustomApplicationException("Can't read PDF Template");
-        }
-    }
-
     private int getCountOfNewPages(IBlockElement element) {
         try (PdfReader reader = new PdfReader(new ByteArrayInputStream(pdfDocumentInBytes));
              ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -310,6 +370,27 @@ public class PdfDocumentGenerator {
         return table;
     }
 
+    private Paragraph getFilledParagraphForTextDocument(byte[] text) {
+        try {
+            PdfFont localFont = PdfFontFactory.createFont(GostA, "Identity-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+            String str = new String(text, StandardCharsets.UTF_8);
+            return new Paragraph()
+                    .add(str)
+                    .setPaddingLeft(millimetersToPoints(5))
+                    .setPaddingTop(millimetersToPoints(5))
+                    .setPaddingRight(millimetersToPoints(5))
+                    .setHorizontalAlignment(HorizontalAlignment.CENTER)
+                    .setVerticalAlignment(VerticalAlignment.TOP)
+                    .setTextAlignment(TextAlignment.JUSTIFIED)
+                    .setFont(localFont)
+                    .setFontSize(millimetersToPoints(5))
+                    .setItalic();
+        } catch (java.io.IOException e) {
+            log.debug(e.getMessage());
+            throw new PdfCustomApplicationException("Can't find font file");
+        }
+    }
+
     private byte[] getDocumentWithAddedPages(int countOfAddedPages, byte[] pageTemplate) {
         try (PdfReader reader = new PdfReader(new ByteArrayInputStream(pdfDocumentInBytes));
              PdfReader templateReader = new PdfReader(new ByteArrayInputStream(pageTemplate));
@@ -336,25 +417,20 @@ public class PdfDocumentGenerator {
     }
 
     private Cell getContentsCell(String cellContent) {
-        PdfFont localFont = null;
         try {
-            localFont = PdfFontFactory.createFont(GostA, "Identity-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+            PdfFont localFont = PdfFontFactory.createFont(GostA, "Identity-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+            return new Cell()
+                    .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFont(localFont)
+                    .setFontSize(millimetersToPoints(3))
+                    .setMinHeight(millimetersToPoints(8))
+                    .setBorder(new SolidBorder(ColorConstants.BLACK, millimetersToPoints(0.25f)))
+                    .add(new Paragraph(cellContent).setItalic());
         } catch (java.io.IOException e) {
             log.debug(e.getMessage());
             throw new PdfCustomApplicationException("Can't find font file");
         }
-        return new Cell()
-                .setVerticalAlignment(VerticalAlignment.MIDDLE)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFont(localFont)
-                .setFontSize(millimetersToPoints(3))
-                .setMinHeight(millimetersToPoints(8))
-                .setBorder(new SolidBorder(ColorConstants.BLACK, millimetersToPoints(0.25f)))
-                .add(new Paragraph(cellContent).setItalic());
-    }
-
-    public PdfDocumentGenerator getFilledTextDocumentTitleBlock(DocumentDataForPdf inputStamp) {
-        return getFilledDocument(getRelativeFieldAreasWithDataForTextDocumentTitleBlock(inputStamp));
     }
 
     public static byte[] mergePdf(byte[] firstDocInBytes, byte[] secondDocInBytes) {

@@ -51,7 +51,7 @@ public class ProjectRepository {
     }
 
     private UserEntity getUser(Long userId, Connection connection) {
-        return Optional.ofNullable(userId).map(x -> userRepository.fetchById(x, connection)).orElse(null);
+        return Optional.ofNullable(userId).map(x -> userRepository.fetchById(x, connection, true)).orElse(null);
     }
 
     private CompanyEntity getCompany(Long companyId, Connection connection) {
@@ -152,6 +152,16 @@ public class ProjectRepository {
                 "UPDATE  bpm_document SET reassembly_required = true " +
                         "WHERE project_id = ? AND deleted = false";
         try (PreparedStatement pstmt = connection.prepareStatement(updateProjectByIdSql)) {
+            pstmt.setLong(1, projectId);
+            return pstmt.executeUpdate();
+        }
+    }
+
+    protected int setReassemblyRequiredById(Long projectId, Connection connection) throws SQLException {
+        String setReassemblyByIdSql =
+                "UPDATE  bpm_project SET reassembly_required = true " +
+                        "WHERE id = ? AND deleted = false";
+        try (PreparedStatement pstmt = connection.prepareStatement(setReassemblyByIdSql)) {
             pstmt.setLong(1, projectId);
             return pstmt.executeUpdate();
         }

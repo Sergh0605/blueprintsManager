@@ -43,7 +43,7 @@ public class DocumentRepository {
     }
 
     private UserEntity getUser(Long userId, Connection connection) {
-        return Optional.ofNullable(userId).map(x -> userRepository.fetchById(x, connection)).orElse(null);
+        return Optional.ofNullable(userId).map(x -> userRepository.fetchById(x, connection, true)).orElse(null);
     }
 
     public List<DocumentEntity> fetchAllByProjectIdTransactional(Long projectId) {
@@ -120,8 +120,13 @@ public class DocumentRepository {
             connection.setAutoCommit(false);
             try {
                 log.debug(String.format("Try to create new %s Document for Project with id = %d", document.getDocumentType().name(), document.getProject().getId()));
+                Integer maxDocNumber = fetchMaxDocNumberByProjectId(document, connection);
+                if (maxDocNumber == null) {
+                    document.setNumberInProject(1);
+                } else document.setNumberInProject(maxDocNumber + 1);
                 Long createdDocumentId = create(document, connection);
                 DocumentEntity documentEntity = fetchById(createdDocumentId, connection);
+                projectRepository.setReassemblyRequiredById(documentEntity.getProject().getId(), connection);
                 connection.commit();
                 log.debug(String.format("Document with id = %d is created", documentEntity.getId()));
                 return documentEntity;
@@ -133,6 +138,25 @@ public class DocumentRepository {
         } catch (SQLException e) {
             log.debug(e.getMessage());
             throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
+
+    private Integer fetchMaxDocNumberByProjectId(DocumentEntity document, Connection connection) throws SQLException {
+        String getMaxDocNumberSql =
+                "SELECT max(number_in_project) as maxNumber " +
+                        "FROM bpm_document " +
+                        "WHERE deleted = false AND project_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(getMaxDocNumberSql)) {
+            pstmt.setLong(1, document.getProject().getId());
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                if (resultSet.next()) {
+                    Integer maxDocNumber = (Integer) resultSet.getObject("maxNumber");
+                    log.debug(String.format("Max Document number in Project with id = %d is %d", document.getProject().getId(), maxDocNumber));
+                    return maxDocNumber;
+                }
+                log.debug(String.format("Project with id= %d hasn't Documents", document.getProject().getId()));
+                return null;
+            }
         }
     }
 
@@ -198,6 +222,7 @@ public class DocumentRepository {
                 log.debug(String.format("Try to update Document file in PDF with id = %d", documentId));
                 updateDocumentInPdf(documentId, documentInPdf, connection);
                 DocumentEntity documentEntity = fetchById(documentId, connection);
+                projectRepository.setReassemblyRequiredById(documentEntity.getProject().getId(), connection);
                 connection.commit();
                 log.debug(String.format("Document in PDF updated in Document with id = %d", documentId));
                 return documentEntity;
@@ -225,26 +250,37 @@ public class DocumentRepository {
 
     public byte[] fetchContentInPdfByDocumentIdTransactional(Long documentId) {
         try (Connection connection = dataSource.getConnection()) {
-            log.debug(String.format("Try to find Content in PDF for Document with id = %d", documentId));
-            String getContentInPdfSql =
-                    "SELECT content_in_pdf as contentInPdf " +
-                            "FROM bpm_document " +
-                            "WHERE id = ?";
-            try (PreparedStatement pstmt = connection.prepareStatement(getContentInPdfSql)) {
-                pstmt.setLong(1, documentId);
-                try (ResultSet resultSet = pstmt.executeQuery()) {
-                    if (resultSet.next()) {
-                        log.debug(String.format("Content in Pdf for Document with id = %d found", documentId));
-                        return resultSet.getBytes(1);
-                    }
-                    String message = String.format("Document with id= %d not found", documentId);
-                    log.debug(message);
-                    throw new DataBaseCustomApplicationException(message);
-                }
+            connection.setAutoCommit(false);
+            try {
+                return fetchContentInPdfByDocumentId(documentId, connection);
+            } catch (SQLException e) {
+                connection.rollback();
+                log.debug(e.getMessage());
+                throw new DataBaseCustomApplicationException("Database unexpected error.");
             }
         } catch (SQLException e) {
             log.debug(e.getMessage());
             throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
+
+    private byte[] fetchContentInPdfByDocumentId(Long documentId, Connection connection) throws SQLException {
+        log.debug(String.format("Try to find Content in PDF for Document with id = %d", documentId));
+        String getContentInPdfSql =
+                "SELECT content_in_pdf as contentInPdf " +
+                        "FROM bpm_document " +
+                        "WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(getContentInPdfSql)) {
+            pstmt.setLong(1, documentId);
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                if (resultSet.next()) {
+                    log.debug(String.format("Content in Pdf for Document with id = %d found", documentId));
+                    return resultSet.getBytes(1);
+                }
+                String message = String.format("Document with id= %d not found", documentId);
+                log.debug(message);
+                throw new DataBaseCustomApplicationException(message);
+            }
         }
     }
 
@@ -304,6 +340,84 @@ public class DocumentRepository {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public Long deleteByIdTransactional(Long documentId) {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                log.debug(String.format("Try to delete document with id = %d", documentId));
+                Long projectId = fetchById(documentId, connection).getProject().getId();
+                deleteById(documentId, connection);
+                projectRepository.setReassemblyRequiredById(projectId, connection);
+                connection.commit();
+                log.debug(String.format("Document with id = %d set deleted", documentId));
+                return projectId;
+            } catch (SQLException e) {
+                connection.rollback();
+                log.debug(e.getMessage());
+                throw new DataBaseCustomApplicationException("Database unexpected error.");
+            }
+        } catch (SQLException e) {
+            log.debug(e.getMessage());
+            throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
+
+    private void deleteById(Long documentId, Connection connection) {
+        String setDeleteByProjectIdSql =
+                "UPDATE  bpm_document SET deleted = true, reassembly_required = false " +
+                        "WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(setDeleteByProjectIdSql)) {
+            pstmt.setLong(1, documentId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public DocumentEntity updateTransactional(DocumentEntity updateEntity) {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                log.debug(String.format("Try to update document with id = %d", updateEntity.getId()));
+                if (updateEntity.getContentInPdf() == null) {
+                    updateEntity.setContentInPdf(fetchContentInPdfByDocumentId(updateEntity.getId(), connection));
+                }
+                update(updateEntity, connection);
+                DocumentEntity updatedEntity = fetchById(updateEntity.getId(), connection);
+                projectRepository.setReassemblyRequiredById(updatedEntity.getProject().getId(), connection);
+                connection.commit();
+                log.debug(String.format("Document with id = %d updated", updateEntity.getId()));
+                return updatedEntity;
+            } catch (SQLException e) {
+                connection.rollback();
+                log.debug(e.getMessage());
+                throw new DataBaseCustomApplicationException("Database unexpected error.");
+            }
+        } catch (SQLException e) {
+            log.debug(e.getMessage());
+            throw new DataBaseCustomApplicationException("Database connection error.");
+        }
+    }
+
+    private void update(DocumentEntity document, Connection connection) throws SQLException {
+        String updateDocumentByIdSql =
+                "UPDATE  bpm_document SET number_in_project = ?, type_id = ?, name = ?, code = ?, designer_id = ?, " +
+                        "supervisor_id = ?, content_in_pdf = ?, reassembly_required = true, edit_time = ? " +
+                        "WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(updateDocumentByIdSql)) {
+            pstmt.setLong(1, document.getNumberInProject());
+            pstmt.setLong(2, document.getDocumentType().getId());
+            pstmt.setString(3, document.getName());
+            pstmt.setString(4, document.getCode());
+            pstmt.setObject(5, Optional.ofNullable(document.getDesigner()).map(UserEntity::getId).orElse(null));
+            pstmt.setObject(6, Optional.ofNullable(document.getDesigner()).map(UserEntity::getId).orElse(null));
+            pstmt.setObject(7, document.getContentInPdf());
+            pstmt.setTimestamp(8, Timestamp.valueOf(document.getEditTime()));
+            pstmt.setLong(9, document.getId());
+            pstmt.executeUpdate();
         }
     }
 }

@@ -132,6 +132,12 @@
             <button type="button" class="btn btn-danger">DELETE PROJECT</button>
         </a>
     </div>
+    <p>&nbsp;</p>
+    <div th:if="${projectExists}">
+        <a th:href="@{'~/document/new/' +${project.getId()}}">
+            <button type="button" class="btn btn-primary">ADD DOCUMENT</button>
+        </a>
+    </div>
 
     <div th:if="${projectExists}">
         <h1>Documents list</h1>
@@ -167,7 +173,7 @@
                 </a>
                 </td>
                 <td><a th:href="@{'~/document/delete/' + ${document.getId()}}">
-                    <button th:disabled="${unmodifiedTypes.contains(document.getType())}" type="button" class="btn btn-danger">DELETE</button>
+                    <button th:disabled="${document.getType().isUnmodified()}" type="button" class="btn btn-danger">DELETE</button>
                 </a>
                 </td>
             </tr>

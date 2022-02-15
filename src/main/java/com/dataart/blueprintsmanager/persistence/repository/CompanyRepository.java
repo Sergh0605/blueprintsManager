@@ -51,7 +51,7 @@ public class CompanyRepository {
 
     public List<CompanyEntity> fetchAllTransactional() {
         String getAllCompaniesSql =
-                "SELECT id, name, signer_position as signerPosition, signer_name as signerName, encode(logo, 'escape') as logo, city " +
+                "SELECT id, name, signer_position as signerPosition, signer_name as signerName, logo, city " +
                         "FROM bpm_company " +
                         "WHERE deleted = 'false'";
         try (Connection connection = dataSource.getConnection();
@@ -74,7 +74,7 @@ public class CompanyRepository {
 
     protected CompanyEntity fetchById(Long companyId, Connection connection) {
         String getCompanyByIdSql =
-                "SELECT id, name, signer_position as signerPosition, signer_name as signerName, encode(logo, 'escape') as logo, city " +
+                "SELECT id, name, signer_position as signerPosition, signer_name as signerName, logo, city " +
                         "FROM bpm_company " +
                         "WHERE deleted = 'false' AND  id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(getCompanyByIdSql)) {

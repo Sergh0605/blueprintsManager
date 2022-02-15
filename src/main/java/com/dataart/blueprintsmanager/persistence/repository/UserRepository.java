@@ -1,6 +1,7 @@
 package com.dataart.blueprintsmanager.persistence.repository;
 
 import com.dataart.blueprintsmanager.exceptions.DataBaseCustomApplicationException;
+import com.dataart.blueprintsmanager.persistence.entity.CompanyEntity;
 import com.dataart.blueprintsmanager.persistence.entity.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,15 +22,19 @@ public class UserRepository {
     private final DataSource dataSource;
     private final CompanyRepository companyRepository;
 
-    private UserEntity buildUser(ResultSet resultSet, Connection connection) {
+    private UserEntity buildUser(ResultSet resultSet, Connection connection, boolean lazyInitialization) {
         try {
+            CompanyEntity company = null;
+            if (!lazyInitialization) {
+                company = companyRepository.fetchById(resultSet.getLong("companyId"), connection);
+            }
             return UserEntity.builder()
                     .id(resultSet.getLong("id"))
                     .lastName(resultSet.getString("name"))
                     .login(resultSet.getString("login"))
                     .password(resultSet.getString("password"))
                     .signature(resultSet.getBytes("signature"))
-                    .company(companyRepository.fetchById(resultSet.getLong("companyId"), connection))
+                    .company(company)
                     .build();
         } catch (SQLException e) {
             log.debug(e.getMessage());
@@ -40,7 +45,7 @@ public class UserRepository {
     public UserEntity fetchByIdTransactional(Long userId) {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            UserEntity userEntity = fetchById(userId, connection);
+            UserEntity userEntity = fetchById(userId, connection, true);
             connection.commit();
             return userEntity;
         } catch (SQLException e) {
@@ -49,7 +54,7 @@ public class UserRepository {
         }
     }
 
-    protected UserEntity fetchById(Long userId, Connection connection) {
+    protected UserEntity fetchById(Long userId, Connection connection, boolean lazyInitialization) {
         String getCompanyByIdSql =
                 "SELECT id, last_name as name, login, password, company_id as companyId, signature " +
                         "FROM bpm_user " +
@@ -59,7 +64,7 @@ public class UserRepository {
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 if (resultSet.next()) {
                     log.debug(String.format("User with id = %d found", userId));
-                    return buildUser(resultSet, connection);
+                    return buildUser(resultSet, connection, lazyInitialization);
                 }
                 String message = String.format("User with userId= %d not found", userId);
                 log.debug(message);
@@ -84,7 +89,7 @@ public class UserRepository {
             List<UserEntity> userEntityList = new ArrayList<>();
             Integer usersCount = 0;
             while (resultSet.next()) {
-                UserEntity user = buildUser(resultSet, connection);
+                UserEntity user = buildUser(resultSet, connection, false);
                 userEntityList.add(user);
                 usersCount++;
             }
@@ -110,7 +115,7 @@ public class UserRepository {
                 List<UserEntity> userEntityList = new ArrayList<>();
                 Integer usersCount = 0;
                 while (resultSet.next()) {
-                    UserEntity user = buildUser(resultSet, connection);
+                    UserEntity user = buildUser(resultSet, connection, true);
                     userEntityList.add(user);
                     usersCount++;
                 }
