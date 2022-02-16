@@ -38,7 +38,14 @@ import static com.dataart.blueprintsmanager.pdf.PdfUtils.millimetersToPoints;
 @Data
 public class PdfDocumentGenerator {
     private final byte[] pdfDocumentInBytes;
-    private final String GostA = "./src/main/resources/font/GOST_type_A_1.ttf";
+    private final String font;
+    public static final Set<DocumentRelativeFieldAreas> signAreas = Set.of(
+            DocumentRelativeFieldAreas.SmallSupervisorSign,
+            DocumentRelativeFieldAreas.SmallDesignerSign,
+            DocumentRelativeFieldAreas.SupervisorSign,
+            DocumentRelativeFieldAreas.DesignerSign,
+            DocumentRelativeFieldAreas.ChiefEngineerSign,
+            DocumentRelativeFieldAreas.ControllerSign);
 
 
     public PdfDocumentGenerator getFilledA4CoverDocument(DocumentDataForPdf inputStamp) {
@@ -68,7 +75,7 @@ public class PdfDocumentGenerator {
             document.setRenderer(new A4TextDocumentRenderer(document));
             document.add(getFilledTableForContentsDocument(rowsOfDocument));
             document.close();
-            return new PdfDocumentGenerator(os.toByteArray());
+            return new PdfDocumentGenerator(os.toByteArray(), font);
         } catch (java.io.IOException e) {
             log.debug(e.getMessage());
             throw new PdfCustomApplicationException("Can't read PDF Template");
@@ -86,10 +93,28 @@ public class PdfDocumentGenerator {
             document.setRenderer(new A4TextDocumentRenderer(document));
             document.add(getFilledParagraphForTextDocument(text));
             document.close();
-            return new PdfDocumentGenerator(os.toByteArray());
+            return new PdfDocumentGenerator(os.toByteArray(), font);
         } catch (java.io.IOException e) {
             log.debug(e.getMessage());
             throw new PdfCustomApplicationException("Can't read PDF Template");
+        }
+    }
+
+    public static byte[] mergePdf(byte[] firstDocInBytes, byte[] secondDocInBytes) {
+        try (PdfReader firstReader = new PdfReader(new ByteArrayInputStream(firstDocInBytes));
+             ByteArrayOutputStream os = new ByteArrayOutputStream();
+             PdfWriter writer = new PdfWriter(os);
+             PdfReader secondReader = new PdfReader(new ByteArrayInputStream(secondDocInBytes));
+             PdfDocument firstPdfDocument = new PdfDocument(firstReader, writer.setSmartMode(true));
+             PdfDocument secondPdfDocument = new PdfDocument(secondReader)) {
+            PdfMerger merger = new PdfMerger(firstPdfDocument);
+            merger.merge(secondPdfDocument, 1, secondPdfDocument.getNumberOfPages());
+            firstPdfDocument.close();
+            secondPdfDocument.close();
+            return os.toByteArray();
+        } catch (java.io.IOException e) {
+            log.debug(e.getMessage());
+            throw new PdfCustomApplicationException("Can't read PDF file");
         }
     }
 
@@ -185,17 +210,6 @@ public class PdfDocumentGenerator {
         return relativeFieldAreasWithData;
     }
 
-    private Set<DocumentRelativeFieldAreas> getSignAreas() {
-        Set<DocumentRelativeFieldAreas> fieldAreas = new HashSet<>();
-        fieldAreas.add(DocumentRelativeFieldAreas.SmallSupervisorSign);
-        fieldAreas.add(DocumentRelativeFieldAreas.SmallDesignerSign);
-        fieldAreas.add(DocumentRelativeFieldAreas.SupervisorSign);
-        fieldAreas.add(DocumentRelativeFieldAreas.DesignerSign);
-        fieldAreas.add(DocumentRelativeFieldAreas.ChiefEngineerSign);
-        fieldAreas.add(DocumentRelativeFieldAreas.ControllerSign);
-        return fieldAreas;
-    }
-
     private PdfDocumentGenerator getFilledDocument(Map<DocumentRelativeFieldAreas, Object> relativeFieldAreasWithData) {
         try (PdfReader reader = new PdfReader(new ByteArrayInputStream(pdfDocumentInBytes));
              ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -203,10 +217,10 @@ public class PdfDocumentGenerator {
              PdfDocument pdfDoc = new PdfDocument(reader, writer);
              Document document = new Document(pdfDoc)) {
             List<Paragraph> filledFieldsOfDocument = new ArrayList<>();
-            relativeFieldAreasWithData.forEach((x, y) -> filledFieldsOfDocument.addAll(getTitleBlockFilledFields(y, x, pdfDoc)));
+            relativeFieldAreasWithData.forEach((area, data) -> filledFieldsOfDocument.addAll(getTitleBlockFilledFields(area, data, pdfDoc)));
             filledFieldsOfDocument.forEach(document::add);
             document.close();
-            return new PdfDocumentGenerator(os.toByteArray());
+            return new PdfDocumentGenerator(os.toByteArray(), font);
         } catch (IOException | java.io.IOException e) {
             log.debug(e.getMessage());
             throw new PdfCustomApplicationException("Can't read PDF template");
@@ -261,8 +275,8 @@ public class PdfDocumentGenerator {
     }
 
     private List<Paragraph> getTitleBlockFilledFields(
-            Object content,
             DocumentRelativeFieldAreas fieldArea,
+            Object content,
             PdfDocument pdfDocument) {
         List<Paragraph> filledFields = new ArrayList<>();
         if (content != null) {
@@ -270,11 +284,13 @@ public class PdfDocumentGenerator {
             Image image;
             Map<Rectangle, Integer> fieldAreasOnPageInTitleBlockOfDocument = getFieldAreasInTitleBlockOnPageOfDocument(pdfDocument, fieldArea);
             for (Map.Entry<Rectangle, Integer> areaOnPage : fieldAreasOnPageInTitleBlockOfDocument.entrySet()) {
-                if (getSignAreas().contains(fieldArea)) {
+                if (signAreas.contains(fieldArea)) {
                     Paragraph paragraphForSign = getParagraph(areaOnPage.getKey(), 4);
                     paragraphForSign.setPageNumber(areaOnPage.getValue())
                             .setTextAlignment(TextAlignment.CENTER);
-                    if (!(content instanceof byte[] signInBytes)) throw new AssertionError();
+                    if (!(content instanceof byte[] signInBytes)) {
+                        throw new AssertionError();
+                    }
                     image = new Image(ImageDataFactory.create(signInBytes))
                             .setAutoScale(true);
                     paragraphForSign.add(image);
@@ -285,7 +301,9 @@ public class PdfDocumentGenerator {
                 paragraph.setTextAlignment(fieldArea.getAlignment())
                         .setPageNumber(areaOnPage.getValue());
                 if (fieldArea.equals(DocumentRelativeFieldAreas.CompanyName)) {
-                    if (!(content instanceof CompanyDataForPdf company)) throw new AssertionError();
+                    if (!(content instanceof CompanyDataForPdf company)) {
+                        throw new AssertionError();
+                    }
                     if (company.getLogo() != null) {
                         image = new Image(ImageDataFactory.create(company.getLogo()))
                                 .setAutoScale(true)
@@ -293,9 +311,13 @@ public class PdfDocumentGenerator {
                         paragraph.add(image);
                         filledFields.add(paragraph);
                         continue;
-                    } else if (company.getName() != null) textForParagraph = company.getName();
+                    } else if (company.getName() != null) {
+                        textForParagraph = company.getName();
+                    }
                 }
-                if (content instanceof String string) textForParagraph = string;
+                if (content instanceof String string) {
+                    textForParagraph = string;
+                }
 
                 if (fieldArea.equals(DocumentRelativeFieldAreas.AdditionalCode)) {
                     paragraph.setRotationAngle(180 * Math.PI / 180);
@@ -313,7 +335,7 @@ public class PdfDocumentGenerator {
                 }
                 PdfFont mainFont;
                 try {
-                    mainFont = PdfFontFactory.createFont(GostA, "Identity-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+                    mainFont = PdfFontFactory.createFont(font, "Identity-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
                 } catch (java.io.IOException e) {
                     log.debug(e.getMessage());
                     throw new PdfCustomApplicationException("Can't find Font file");
@@ -372,7 +394,7 @@ public class PdfDocumentGenerator {
 
     private Paragraph getFilledParagraphForTextDocument(byte[] text) {
         try {
-            PdfFont localFont = PdfFontFactory.createFont(GostA, "Identity-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+            PdfFont localFont = PdfFontFactory.createFont(font, "Identity-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
             String str = new String(text, StandardCharsets.UTF_8);
             return new Paragraph()
                     .add(str)
@@ -418,7 +440,7 @@ public class PdfDocumentGenerator {
 
     private Cell getContentsCell(String cellContent) {
         try {
-            PdfFont localFont = PdfFontFactory.createFont(GostA, "Identity-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+            PdfFont localFont = PdfFontFactory.createFont(font, "Identity-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
             return new Cell()
                     .setVerticalAlignment(VerticalAlignment.MIDDLE)
                     .setTextAlignment(TextAlignment.CENTER)
@@ -432,23 +454,4 @@ public class PdfDocumentGenerator {
             throw new PdfCustomApplicationException("Can't find font file");
         }
     }
-
-    public static byte[] mergePdf(byte[] firstDocInBytes, byte[] secondDocInBytes) {
-        try (PdfReader firstReader = new PdfReader(new ByteArrayInputStream(firstDocInBytes));
-             ByteArrayOutputStream os = new ByteArrayOutputStream();
-             PdfWriter writer = new PdfWriter(os);
-             PdfReader secondReader = new PdfReader(new ByteArrayInputStream(secondDocInBytes));
-             PdfDocument firstPdfDocument = new PdfDocument(firstReader, writer.setSmartMode(true));
-             PdfDocument secondPdfDocument = new PdfDocument(secondReader)) {
-            PdfMerger merger = new PdfMerger(firstPdfDocument);
-            merger.merge(secondPdfDocument, 1, secondPdfDocument.getNumberOfPages());
-            firstPdfDocument.close();
-            secondPdfDocument.close();
-            return os.toByteArray();
-        } catch (java.io.IOException e) {
-            log.debug(e.getMessage());
-            throw new PdfCustomApplicationException("Can't read PDF file");
-        }
-    }
-
 }

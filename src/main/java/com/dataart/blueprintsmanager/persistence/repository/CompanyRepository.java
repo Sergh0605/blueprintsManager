@@ -1,16 +1,15 @@
 package com.dataart.blueprintsmanager.persistence.repository;
 
+import com.dataart.blueprintsmanager.exceptions.CustomApplicationException;
 import com.dataart.blueprintsmanager.exceptions.DataBaseCustomApplicationException;
+import com.dataart.blueprintsmanager.exceptions.NotFoundCustomApplicationException;
 import com.dataart.blueprintsmanager.persistence.entity.CompanyEntity;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,59 +19,42 @@ import java.util.List;
 public class CompanyRepository {
     private final DataSource dataSource;
 
-    private CompanyEntity buildCompany(ResultSet resultSet) {
-        try {
-            return CompanyEntity.builder()
-                    .id(resultSet.getLong("id"))
-                    .name(resultSet.getString("name"))
-                    .signerPosition(resultSet.getString("signerPosition"))
-                    .signerName(resultSet.getString("signerName"))
-                    .logo(resultSet.getBytes("logo"))
-                    .city(resultSet.getString("city"))
-                    .build();
-        } catch (SQLException e) {
-            log.debug(e.getMessage());
-            throw new DataBaseCustomApplicationException("Can't parse company object from DB");
-        }
-    }
-
-    public CompanyEntity fetchByIdTransactional(Long companyId) {
+    public CompanyEntity fetchById(Long companyId) {
         try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            CompanyEntity companyEntity = fetchById(companyId, connection);
-            connection.commit();
-
-            return companyEntity;
+            return fetchById(companyId, connection);
         } catch (SQLException e) {
-            log.debug(e.getMessage());
+            log.error(e.getMessage());
             throw new DataBaseCustomApplicationException("Database connection error.");
+        } catch (CustomApplicationException e) {
+            log.info(e.getMessage());
+            throw e;
         }
     }
 
-    public List<CompanyEntity> fetchAllTransactional() {
+    public List<CompanyEntity> fetchAll() {
+        log.info("Try to find All Companies");
         String getAllCompaniesSql =
                 "SELECT id, name, signer_position as signerPosition, signer_name as signerName, logo, city " +
                         "FROM bpm_company " +
                         "WHERE deleted = 'false'";
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(getAllCompaniesSql);
-             ResultSet resultSet = pstmt.executeQuery()) {
+             Statement stmt = connection.createStatement();
+             ResultSet resultSet = stmt.executeQuery(getAllCompaniesSql)) {
             List<CompanyEntity> companyEntityList = new ArrayList<>();
-            Integer companiesCount = 0;
             while (resultSet.next()) {
                 CompanyEntity company = buildCompany(resultSet);
                 companyEntityList.add(company);
-                companiesCount++;
             }
-            log.debug(String.format("%d Companies found", companiesCount));
+            log.info(String.format("%d Companies found", companyEntityList.size()));
             return companyEntityList;
         } catch (SQLException e) {
-            log.debug(e.getMessage());
-            throw new DataBaseCustomApplicationException("Database connection error.");
+            log.error(e.getMessage(), e);
+            throw new DataBaseCustomApplicationException("Database connection error.", e);
         }
     }
 
-    protected CompanyEntity fetchById(Long companyId, Connection connection) {
+    protected CompanyEntity fetchById(Long companyId, Connection connection) throws SQLException {
+        log.info(String.format("Try to find Company with id = %d", companyId));
         String getCompanyByIdSql =
                 "SELECT id, name, signer_position as signerPosition, signer_name as signerName, logo, city " +
                         "FROM bpm_company " +
@@ -81,17 +63,23 @@ public class CompanyRepository {
             pstmt.setLong(1, companyId);
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 if (resultSet.next()) {
-                    log.debug(String.format("Company with id = %d found", companyId));
+                    log.info(String.format("Company with id = %d found", companyId));
                     return buildCompany(resultSet);
                 }
-                String message = String.format("Company with companyId= %d not found", companyId);
-                log.debug(message);
-                throw new DataBaseCustomApplicationException(message);
+                throw new NotFoundCustomApplicationException(String.format("Company with companyId= %d not found", companyId));
             }
-        } catch (SQLException e) {
-            log.debug(e.getMessage());
-            throw new DataBaseCustomApplicationException("Database connection error.");
         }
+    }
+
+    private CompanyEntity buildCompany(ResultSet resultSet) throws SQLException {
+        return CompanyEntity.builder()
+                .id(resultSet.getLong("id"))
+                .name(resultSet.getString("name"))
+                .signerPosition(resultSet.getString("signerPosition"))
+                .signerName(resultSet.getString("signerName"))
+                .logo(resultSet.getBytes("logo"))
+                .city(resultSet.getString("city"))
+                .build();
     }
 }
 

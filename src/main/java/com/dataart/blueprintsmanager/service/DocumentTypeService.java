@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -17,22 +16,18 @@ import java.util.List;
 @Slf4j
 @AllArgsConstructor
 public class DocumentTypeService {
-    DocumentTypeRepository documentTypeRepository;
+    private final DocumentTypeRepository documentTypeRepository;
 
-    public List<byte[]> getDocumentTemplateByTypeId(Long documentTypeId) {
-        return documentTypeRepository.fetchPdfTemplatesByIdTransactional(documentTypeId);
+    public byte[] getFirstPageTemplateByTypeId(Long documentTypeId) {
+        return documentTypeRepository.fetchFirstPageTemplateById(documentTypeId);
+    }
+
+    public byte[] getGeneralPageTemplateByTypeId(Long documentTypeId) {
+        return documentTypeRepository.fetchGeneralPageTemplateById(documentTypeId);
     }
 
     public List<DocumentType> getAll() {
         return Arrays.stream(DocumentType.values()).toList();
-    }
-
-    public List<DocumentType> getAllUnmodified() {
-        List<DocumentType> documentTypes = new ArrayList<>();
-        documentTypes.add(DocumentType.COVER_PAGE);
-        documentTypes.add(DocumentType.TITLE_PAGE);
-        documentTypes.add(DocumentType.TABLE_OF_CONTENTS);
-        return documentTypes;
     }
 
     public void updatePdfTemplates() throws IOException {
@@ -46,10 +41,10 @@ public class DocumentTypeService {
         byte[] textF = Files.readAllBytes(Paths.get(pathToTextTemplate));
         byte[] textS = Files.readAllBytes(Paths.get(pathToSecondPageTemplatePdf));
         byte[] drawing = Files.readAllBytes(Paths.get(pathToDrawingTemplatePdf));
-        documentTypeRepository.updateTemplateTransactional(1L, coverPage, null);
-        documentTypeRepository.updateTemplateTransactional(2L, titlePage, null);
-        documentTypeRepository.updateTemplateTransactional(3L, textF, textS);
-        documentTypeRepository.updateTemplateTransactional(4L, textF, textS);
-        documentTypeRepository.updateTemplateTransactional(5L, drawing, null);
+        documentTypeRepository.updateTemplate(1L, coverPage, null);
+        documentTypeRepository.updateTemplate(2L, titlePage, null);
+        documentTypeRepository.updateTemplate(3L, textF, textS);
+        documentTypeRepository.updateTemplate(4L, textF, textS);
+        documentTypeRepository.updateTemplate(5L, drawing, null);
     }
 }

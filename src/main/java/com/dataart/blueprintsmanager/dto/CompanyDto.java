@@ -25,7 +25,9 @@ public class CompanyDto {
             this.signerPosition = company.getSignerPosition();
             this.signerName = company.getSignerName();
             this.city = company.getCity();
-            if (company.getLogo() != null && company.getLogo().length > 0) hasLogo = true;
+            if (company.getLogo() != null && company.getLogo().length > 0) {
+                hasLogo = true;
+            }
         }
     }
 }

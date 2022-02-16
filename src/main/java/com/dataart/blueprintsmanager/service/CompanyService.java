@@ -18,13 +18,17 @@ public class CompanyService {
     private final CompanyRepository companyRepository;
 
     public List<CompanyDto> getAll() {
-        List<CompanyEntity> companyEntities = companyRepository.fetchAllTransactional();
+        List<CompanyEntity> companyEntities = companyRepository.fetchAll();
         return toDtoListConverter(companyEntities);
     }
 
     public CompanyDto getById(Long companyId) {
-        CompanyEntity company = companyRepository.fetchByIdTransactional(companyId);
+        CompanyEntity company = companyRepository.fetchById(companyId);
         return new CompanyDto(company);
+    }
+
+    public CompanyEntity getEntityById(Long companyId) {
+        return companyRepository.fetchById(companyId);
     }
 
     private List<CompanyDto> toDtoListConverter(List<CompanyEntity> companyEntities) {

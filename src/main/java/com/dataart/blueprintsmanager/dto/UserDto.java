@@ -26,7 +26,12 @@ public class UserDto {
             this.name = user.getLastName();
             this.login = Optional.ofNullable(user.getLogin()).orElse("");
             this.companyName = Optional.ofNullable(user.getCompany()).map(CompanyEntity::getName).orElse("");
-            if (user.getSignature() != null && user.getSignature().length > 0) this.hasSign = true;
+            if (user.getSignature() != null && user.getSignature().length > 0) {
+                this.hasSign = true;
+            }
+            if (user.getSignature() != null && user.getSignature().length > 0) {
+                this.hasSign = true;
+            }
         }
     }
 }

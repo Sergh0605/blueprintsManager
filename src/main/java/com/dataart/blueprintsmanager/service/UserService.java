@@ -19,14 +19,18 @@ public class UserService {
     private final UserRepository userRepository;
 
     public List<UserDto> getAll() {
-        List<UserEntity> userEntities = userRepository.fetchAllTransactional();
+        List<UserEntity> userEntities = userRepository.fetchAll();
         return toDtoListConverter(userEntities);
     }
 
-    public List<UserDto> getAllByCompanyId(Long id) {
+    public UserEntity getById(Long userId) {
+        return userRepository.fetchById(userId);
+    }
+
+    public List<UserDto> getAllByCompanyId(Long companyId) {
         List<UserEntity> userEntities = new ArrayList<>();
-        if (id != null) {
-            userEntities = userRepository.fetchAllByCompanyId(id);
+        if (companyId != null) {
+            userEntities = userRepository.fetchAllByCompanyId(companyId);
         }
         return toDtoListConverter(userEntities);
     }

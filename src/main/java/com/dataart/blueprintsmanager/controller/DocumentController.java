@@ -11,43 +11,27 @@ import com.dataart.blueprintsmanager.service.ProjectService;
 import com.dataart.blueprintsmanager.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ContentDisposition;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Controller
 @Slf4j
 @AllArgsConstructor
 public class DocumentController {
-    DocumentService documentService;
-    UserService userService;
-    ProjectService projectService;
-    DocumentTypeService documentTypeService;
+    private final DocumentService documentService;
+    private final UserService userService;
+    private final ProjectService projectService;
+    private final DocumentTypeService documentTypeService;
 
     @GetMapping(value = {"/document/download/{documentId}"})
     public void serveFile(@PathVariable Long documentId, HttpServletResponse response) {
-        DocumentDto document = documentService.getFileForDownload(documentId);
-        response.setContentType("application/octet-stream");
-        String headerKey = "Content-Disposition";
-        ContentDisposition contentDisposition = ContentDisposition.builder("attachment")
-                .filename(document.getDocumentFileName(), StandardCharsets.UTF_8)
-                .build();
-        response.setHeader(headerKey, contentDisposition.toString());
-        try (ServletOutputStream outputStream = response.getOutputStream()) {
-            outputStream.write(document.getDocumentInPdf());
-        } catch (IOException e) {
-            log.debug(e.getMessage());
-            throw new CustomApplicationException("Broken file for download");
-        }
+        documentService.getFileForDownload(documentId, response);
     }
 
     @GetMapping(value = {"/document/delete/{documentId}"})
@@ -100,9 +84,7 @@ public class DocumentController {
         ProjectDto project = projectService.getDtoById(document.getProjectId());
         List<UserDto> users = userService.getAllByCompanyId(project.getCompanyId());
         List<DocumentType> documentTypes = documentTypeService.getAll();
-        if (document.getDesignerId() == null) document.setDesignerId(project.getDesignerId());
-        if (document.getSupervisorId() == null) document.setSupervisorId(project.getSupervisorId());
-        model.addAttribute("document", document);
+        model.addAttribute("document", projectService.setDesignerAndSupervisorInDocument(document));
         model.addAttribute("disabled", fieldsIsDisabled);
         model.addAttribute("documentExists", documentExists);
         model.addAttribute("users", users);

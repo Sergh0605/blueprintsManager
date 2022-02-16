@@ -18,8 +18,12 @@ public class StageService {
     private final StageRepository stageRepository;
 
     public List<StageDto> getAll() {
-        List<StageEntity> stageEntities = stageRepository.fetchAllTransactional();
+        List<StageEntity> stageEntities = stageRepository.fetchAll();
         return toDtoListConverter(stageEntities);
+    }
+
+    public StageEntity getEntityById(Long typeId) {
+        return stageRepository.fetchById(typeId);
     }
 
     private List<StageDto> toDtoListConverter(List<StageEntity> stageEntities) {

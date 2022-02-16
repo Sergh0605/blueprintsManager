@@ -38,7 +38,6 @@
         <input th:field="*{id}" th:value="${project.getId()}" hidden>
         <div>
             <label>Company Executor</label>
-            <!--//TODO Fix "Please Choose Company" item-->
             <select th:disabled="${projectExists}" th:type="number" th:field="*{companyId}"
                     th:onchange="'window.location.href = \'' + @{'~/project/new'} + '?companyId=\' + this.value' ">
                 <option th:value="${null}" selected hidden>

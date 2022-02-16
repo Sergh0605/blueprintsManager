@@ -4,4 +4,8 @@ public class DataBaseCustomApplicationException extends CustomApplicationExcepti
     public DataBaseCustomApplicationException(String message) {
         super(message);
     }
+
+    public DataBaseCustomApplicationException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
