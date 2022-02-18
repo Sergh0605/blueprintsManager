@@ -23,7 +23,7 @@
     </table>
 </div>
 <div style="padding-left: 5%; padding-right: 5%">
-    <h1>Comment list</h1>
+    <h1 th:text="'Comment List for Project with ID = ' + ${projectId}"></h1>
     <table id="table-content" class="table table-striped">
         <tbody>
         <tr th:each="comment  : ${commentPage.content}">
@@ -39,11 +39,16 @@
         </tbody>
     </table>
 </div>
-<div th:if="${commentPage.getTotalPages() > 0}" class="pagination"
-     th:each="pageNumber : ${pageNumbers}">
-    <a th:href="@{${projectId}(size=${commentPage.getPageable().getPageSize()}, page=${pageNumber})}"
-       th:text=${pageNumber}
-       th:class="${pageNumber==commentPage.getPageable().getPageNumber()} ? active"></a>
+
+<div th:if="${commentPage.getTotalPages() > 0}" style="padding-left: 5%; padding-right: 5%">
+    <nav aria-label="Paginator">
+        <ul class="pagination justify-content-center pagination-lg">
+            <li th:each="pageNumber : ${pageNumbers}" th:class="${pageNumber == commentPage.getPageable().pageNumber} ? 'page-item disabled' : 'page-item'">
+                <a class="page-link" th:href="@{${projectId}(size=${commentPage.getPageable().getPageSize()}, page=${pageNumber})}" th:text=${pageNumber}>
+                </a>
+            </li>
+        </ul>
+    </nav>
 </div>
 </body>
 </html>

@@ -42,7 +42,28 @@ public class CommentController {
             model.addAttribute("pageNumbers", pageNumbers);
             model.addAttribute("projectId", projectId);
         }
+        return "projectComments";
+    }
 
-        return "comments";
+    @GetMapping(value = "/comment/document/{documentId}")
+    public String documentCommentsPage(
+            Model model,
+            @RequestParam("page") Optional<Integer> page,
+            @RequestParam("size") Optional<Integer> size,
+            @PathVariable Long documentId) {
+        int currentPage = page.orElse(1);
+        int pageSize = size.orElse(5);
+        CustomPage<CommentDto> commentPage = commentService.getPageOfCommentsForDocument(documentId, PageRequest.of(currentPage, pageSize));
+        model.addAttribute("commentPage", commentPage);
+
+        int totalPages = commentPage.getTotalPages();
+        if (totalPages > 0) {
+            List<Integer> pageNumbers = IntStream.rangeClosed(1, totalPages)
+                    .boxed()
+                    .collect(Collectors.toList());
+            model.addAttribute("pageNumbers", pageNumbers);
+            model.addAttribute("documentId", documentId);
+        }
+        return "documentComments";
     }
 }

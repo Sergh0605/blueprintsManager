@@ -21,13 +21,12 @@ public class CommentService {
 
     public CustomPage<CommentDto> getPageOfCommentsForProject(Long projectId, Pageable pageable) {
         CustomPage<CommentEntity> pageOfCommentEntities = commentRepository.fetchAllByProjectIdPaginated(projectId, pageable);
-        CustomPage<CommentDto> pageOfDto = new CustomPage<>(toDtoList(pageOfCommentEntities.getContent()), pageable, pageOfCommentEntities.getTotal());
-        return pageOfDto;
+        return new CustomPage<>(toDtoList(pageOfCommentEntities.getContent()), pageable, pageOfCommentEntities.getTotal());
     }
 
     public CustomPage<CommentDto> getPageOfCommentsForDocument(Long documentId, Pageable pageable) {
         CustomPage<CommentEntity> pageOfCommentEntities = commentRepository.fetchAllByDocumentIdPaginated(documentId, pageable);
-        return new CustomPage<>(toDtoList(pageOfCommentEntities.getContent()), pageable, pageOfCommentEntities.getTotalPages());
+        return new CustomPage<>(toDtoList(pageOfCommentEntities.getContent()), pageable, pageOfCommentEntities.getTotal());
     }
 
     private List<CommentDto> toDtoList(List<CommentEntity> entityList) {

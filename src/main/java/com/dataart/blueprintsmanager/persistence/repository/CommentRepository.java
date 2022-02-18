@@ -51,8 +51,7 @@ public class CommentRepository {
                 }
                 log.info(String.format("%d Comments found", commentEntityList.size()));
                 Integer countOfComments = fetchCountOfCommentsByProjectId(projectId, connection);
-                CustomPage<CommentEntity> pageOfEntity = new CustomPage<>(commentEntityList, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()), countOfComments);
-                return pageOfEntity;
+                return new CustomPage<>(commentEntityList, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()), countOfComments);
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -131,7 +130,7 @@ public class CommentRepository {
     private CommentEntity buildComment(ResultSet resultSet) throws SQLException {
         return CommentEntity.builder()
                 .id(resultSet.getLong("id"))
-                .user(Optional.ofNullable(userRepository.fetchById(resultSet.getLong("userId"))).orElse(UserEntity.builder().lastName("").build()))
+                .user(Optional.ofNullable(userRepository.fetchById(resultSet.getLong("userId"))).orElse(UserEntity.builder().login("LOGIN").build()))
                 .text(Optional.ofNullable(resultSet.getString("content")).orElse(""))
                 .publicationDateTime(resultSet.getTimestamp("pubTime").toLocalDateTime())
                 .build();

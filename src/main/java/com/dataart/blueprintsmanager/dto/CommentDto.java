@@ -25,7 +25,7 @@ public class CommentDto {
     public CommentDto(CommentEntity comment) {
         if (comment != null) {
             this.id = comment.getId();
-            this.login = Optional.ofNullable(comment.getUser()).map(user -> Optional.ofNullable(user.getLogin()).orElse("")).orElse("");
+            this.login = Optional.ofNullable(comment.getUser()).map(user -> Optional.ofNullable(user.getLogin()).orElse("LOGIN")).orElse("LOGIN");
             this.text = comment.getText();
             this.publicationTime = comment.getPublicationDateTime();
         }
