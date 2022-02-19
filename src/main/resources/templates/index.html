@@ -40,14 +40,20 @@
             <td></td>
             <td></td>
             <td></td>
+            <td></td>
         </tr>
-        <tr th:each="project : ${projects}">
+        <tr th:each="project : ${projectPage.getContent()}">
             <td><a th:text="${project.getCode()}"></a></td>
             <td><a th:text="${project.getName()}"></a></td>
             <td><a th:text="${project.getCompanyName()}"></a></td>
             <td><a th:text="${project.getStageName()}"></a></td>
             <td><a th:text="${project.getEditTimeWithFormat()}"></a></td>
             <td><a th:text="${project.getReassemblyRequired()}"></a></td>
+            <td>
+                <a th:href="@{'~/comment/project/' + ${project.getId()}}">
+                    <button type="button" class="btn btn-info">COMMENTS</button>
+                </a>
+            </td>
             <td>
                 <a th:href="@{'~/project/view/' + ${project.getId()}}">
                     <button type="button" class="btn btn-primary">VIEW</button>
@@ -69,6 +75,19 @@
         </tr>
         </tbody>
     </table>
+    <div th:if="${projectPage.getTotalPages() > 1}" style="padding-left: 5%; padding-right: 5%">
+        <nav aria-label="Paginator">
+            <ul class="pagination justify-content-center pagination-lg">
+                <li th:each="pageNumber : ${pageNumbers}"
+                    th:class="${pageNumber == projectPage.getPageable().pageNumber} ? 'page-item disabled' : 'page-item'">
+                    <a class="page-link"
+                       th:href="@{(size=${projectPage.getPageable().getPageSize()}, page=${pageNumber})}"
+                       th:text=${pageNumber}>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </div>
 </body>
 </html>

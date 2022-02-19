@@ -6,8 +6,10 @@ import com.dataart.blueprintsmanager.pdf.PdfDocumentGenerator;
 import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
 import com.dataart.blueprintsmanager.persistence.entity.StageEntity;
 import com.dataart.blueprintsmanager.persistence.repository.ProjectRepository;
+import com.dataart.blueprintsmanager.util.CustomPage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
@@ -34,6 +36,18 @@ public class ProjectService {
     public List<ProjectDto> getAll() {
         List<ProjectEntity> projects = projectRepository.fetchAll();
         return projects.stream().
+                filter(Objects::nonNull).
+                map(ProjectDto::new).
+                collect(Collectors.toList());
+    }
+
+    public CustomPage<ProjectDto> getAllPaginated(Pageable pageable) {
+        CustomPage<ProjectEntity> pageOfProjectEntities = projectRepository.fetchAllPaginated(pageable);
+        return new CustomPage<>(toDtoList(pageOfProjectEntities.getContent()), pageable, pageOfProjectEntities.getTotal());
+    }
+
+    private List<ProjectDto> toDtoList(List<ProjectEntity> entityList) {
+        return entityList.stream().
                 filter(Objects::nonNull).
                 map(ProjectDto::new).
                 collect(Collectors.toList());

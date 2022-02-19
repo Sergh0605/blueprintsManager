@@ -1,6 +1,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:th="http://www.thymeleaf.org"
- lang="en">
+      lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <title>BlueprintsManager</title>
@@ -28,6 +28,9 @@
     </a>
     <a th:if="${projectExists}" th:href="@{'~/project/download/' + ${project.getId()}}">
         <button type="button" class="btn btn-success">DOWNLOAD PROJECT</button>
+    </a>
+    <a th:href="@{'~/comment/project/' + ${project.getId()}}">
+        <button type="button" class="btn btn-info">COMMENTS</button>
     </a>
     <h1 th:text="'PROJECT ' + ${project.getCode()}"></h1>
     <h4 th:text="'Last edit at ' + ${project.getEditTimeWithFormat()}"></h4>
@@ -125,7 +128,9 @@
             <button type="button" class="btn btn-primary">EDIT</button>
         </a>
         <a th:href="@{'~/project/assemble/' + ${project.getId()}}">
-            <button th:disabled="${!project.getReassemblyRequired()}" type="button" class="btn btn-warning">REASSEMBLE PROJECT</button>
+            <button th:disabled="${!project.getReassemblyRequired()}" type="button" class="btn btn-warning">REASSEMBLE
+                PROJECT
+            </button>
         </a>
         <a th:href="@{'~/project/delete/' + ${project.getId()}}">
             <button type="button" class="btn btn-danger">DELETE PROJECT</button>
@@ -151,6 +156,7 @@
                 <td></td>
                 <td></td>
                 <td></td>
+                <td></td>
             </tr>
             <tr th:each="document : ${documents}">
                 <td><a th:text="${document.getDocumentFullCode()}"></a></td>
@@ -158,13 +164,20 @@
                 <td><a th:text="${document.getEditTimeWithFormat()}"></a></td>
                 <td><a th:text="${document.getReassemblyRequired()}"></a></td>
                 <td>
+                    <a th:href="@{'~/comment/document/' + ${document.getId()}}">
+                        <button type="button" class="btn btn-info">COMMENTS</button>
+                    </a>
+                </td>
+                <td>
                     <a th:href="@{'~/document/view/' + ${document.getId()}}">
                         <button type="button" class="btn btn-primary">VIEW</button>
                     </a>
                 </td>
                 <td>
                     <a th:href="@{'~/document/assemble/' + ${document.getId()}}">
-                        <button th:disabled="${!document.getReassemblyRequired()}" type="button" class="btn btn-warning">ASSEMBLE</button>
+                        <button th:disabled="${!document.getReassemblyRequired()}" type="button"
+                                class="btn btn-warning">ASSEMBLE
+                        </button>
                     </a>
                 </td>
                 <td><a th:href="@{'~/document/download/' + ${document.getId()}}">
@@ -172,7 +185,9 @@
                 </a>
                 </td>
                 <td><a th:href="@{'~/document/delete/' + ${document.getId()}}">
-                    <button th:disabled="${document.getType().isUnmodified()}" type="button" class="btn btn-danger">DELETE</button>
+                    <button th:disabled="${document.getType().isUnmodified()}" type="button" class="btn btn-danger">
+                        DELETE
+                    </button>
                 </a>
                 </td>
             </tr>

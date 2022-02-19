@@ -55,6 +55,18 @@ public class UserRepository {
         }
     }
 
+    public UserEntity fetchByLogin(String login) {
+        try (Connection connection = dataSource.getConnection()) {
+            return fetchByLogin(login, connection);
+        } catch (SQLException e) {
+            log.error(e.getMessage());
+            throw new DataBaseCustomApplicationException("Database unexpected error.", e);
+        } catch (CustomApplicationException e) {
+            log.info(e.getMessage());
+            throw e;
+        }
+    }
+
     public List<UserEntity> fetchAllByCompanyId(Long companyId) {
         log.info(String.format("Try to find all users for company with id = %d", companyId));
         String getAllUsersSql =
@@ -113,5 +125,25 @@ public class UserRepository {
                 .signature(resultSet.getBytes("signature"))
                 .company(company)
                 .build();
+    }
+
+    protected UserEntity fetchByLogin(String login, Connection connection) throws SQLException {
+        log.info(String.format("Try to find user with Login = %s", login));
+        String getUserByLoginSql =
+                "SELECT id, last_name as name, login, password, company_id as companyId, signature " +
+                        "FROM bpm_user " +
+                        "WHERE deleted = 'false' AND  login = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(getUserByLoginSql)) {
+            pstmt.setObject(1, login);
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                if (resultSet.next()) {
+                    log.debug(String.format("User with Login = %s found", login));
+                    return buildUser(resultSet, connection, true);
+                }
+                String message = String.format("User with Login = %s not found", login);
+                log.info(message);
+                throw new DataBaseCustomApplicationException(message);
+            }
+        }
     }
 }

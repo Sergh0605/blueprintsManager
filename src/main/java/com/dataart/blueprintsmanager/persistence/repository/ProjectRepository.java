@@ -7,8 +7,11 @@ import com.dataart.blueprintsmanager.persistence.entity.CompanyEntity;
 import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
 import com.dataart.blueprintsmanager.persistence.entity.StageEntity;
 import com.dataart.blueprintsmanager.persistence.entity.UserEntity;
+import com.dataart.blueprintsmanager.util.CustomPage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
@@ -412,5 +415,57 @@ public class ProjectRepository {
                 throw new DataBaseCustomApplicationException("Database unexpected error", e);
             }
         }).orElse(null);
+    }
+
+    public CustomPage<ProjectEntity> fetchAllPaginated(Pageable pageable) {
+        log.info("Try to find {} page with {} Projects", pageable.getPageNumber(), pageable.getPageSize());
+        int countForLimit = pageable.getPageSize();
+        int countForOffset = (pageable.getPageNumber() - 1) * pageable.getPageSize();
+        String getAllProjectsSql =
+                "SELECT id, name, object_name as objName, object_address as objAddr, release_date as date, " +
+                        "volume_number as volNumber, subname, code, designer_id as designerId, " +
+                        "supervisor_id as supervisorId, chief_id as chiefId, controller_id as controllerId, " +
+                        "company_id as companyId, stage_id as stageId, reassembly_required as reassembly, edit_time as editTime " +
+                        "FROM bpm_project " +
+                        "WHERE deleted = false " +
+                        "ORDER BY editTime DESC " +
+                        "LIMIT ? " +
+                        "OFFSET ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(getAllProjectsSql)) {
+            pstmt.setInt(1, countForLimit);
+            pstmt.setInt(2, countForOffset);
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                List<ProjectEntity> projectEntityList = new ArrayList<>();
+                while (resultSet.next()) {
+                    ProjectEntity project = buildProject(resultSet, connection);
+                    projectEntityList.add(project);
+                }
+                log.info(String.format("%d Projects found on page %d", projectEntityList.size(), pageable.getPageNumber()));
+                Integer countOfProjects = fetchCountOfProjects(connection);
+                return new CustomPage<>(projectEntityList, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()), countOfProjects);
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataBaseCustomApplicationException("Database connection error.", e);
+        }
+    }
+
+    private Integer fetchCountOfProjects(Connection connection) throws SQLException {
+        log.info("Try to find Projects count");
+        String getProjectCountSql =
+                "SELECT COUNT(*) as projectCount " +
+                        "FROM bpm_project " +
+                        "WHERE deleted = false";
+        try (Statement stmt = connection.createStatement()) {
+            try (ResultSet resultSet = stmt.executeQuery(getProjectCountSql)) {
+                if (resultSet.next()) {
+                    Integer countOfComments = resultSet.getInt("projectCount");
+                    log.info(String.format("%d Projects found", countOfComments));
+                    return countOfComments;
+                }
+            }
+            return 0;
+        }
     }
 }

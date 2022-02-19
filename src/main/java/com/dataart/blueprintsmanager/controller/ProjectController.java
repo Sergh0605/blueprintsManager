@@ -2,8 +2,10 @@ package com.dataart.blueprintsmanager.controller;
 
 import com.dataart.blueprintsmanager.dto.*;
 import com.dataart.blueprintsmanager.service.*;
+import com.dataart.blueprintsmanager.util.CustomPage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 @Controller
@@ -23,10 +28,29 @@ public class ProjectController {
     private final StageService stageService;
     private final DocumentService documentService;
 
-    @GetMapping(value = {"/", "/index", "/project"})
+
     public String index(Model model) throws IOException {
         List<ProjectDto> projects = projectService.getAll();
         model.addAttribute("projects", projects);
+        return "index";
+    }
+
+    @GetMapping(value = {"/", "/index", "/project"})
+    public String indexPageable(
+            Model model,
+            @RequestParam("page") Optional<Integer> page,
+            @RequestParam("size") Optional<Integer> size) {
+        int currentPage = page.orElse(1);
+        int pageSize = size.orElse(5);
+        CustomPage<ProjectDto> projectPage = projectService.getAllPaginated(PageRequest.of(currentPage, pageSize));
+        model.addAttribute("projectPage", projectPage);
+        int totalPages = projectPage.getTotalPages();
+        if (totalPages > 0) {
+            List<Integer> pageNumbers = IntStream.rangeClosed(1, totalPages)
+                    .boxed()
+                    .collect(Collectors.toList());
+            model.addAttribute("pageNumbers", pageNumbers);
+        }
         return "index";
     }
 

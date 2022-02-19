@@ -35,6 +35,10 @@ public class UserService {
         return toDtoListConverter(userEntities);
     }
 
+    public UserEntity getByLogin(String login) {
+        return userRepository.fetchByLogin(login);
+    }
+
     private List<UserDto> toDtoListConverter(List<UserEntity> userEntities) {
         return userEntities.stream().
                 filter(Objects::nonNull).

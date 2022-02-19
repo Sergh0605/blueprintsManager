@@ -80,10 +80,6 @@ public class DocumentRepository {
                 connection.commit();
                 log.info(String.format("Document with id = %d is transactional created", documentEntity.getId()));
                 return documentEntity;
-            } catch (SQLException e) {
-                connection.rollback();
-                log.error(e.getMessage(), e);
-                throw new DataBaseCustomApplicationException("Database unexpected error.", e);
             } catch (CustomApplicationException e) {
                 connection.rollback();
                 log.info(e.getMessage());

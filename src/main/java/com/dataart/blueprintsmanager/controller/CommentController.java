@@ -8,9 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,8 +30,9 @@ public class CommentController {
         int currentPage = page.orElse(1);
         int pageSize = size.orElse(5);
         CustomPage<CommentDto> commentPage = commentService.getPageOfCommentsForProject(projectId, PageRequest.of(currentPage, pageSize));
+        CommentDto newComment = CommentDto.builder().login("User1").projectId(projectId).build();
         model.addAttribute("commentPage", commentPage);
-
+        model.addAttribute("newComment", newComment);
         int totalPages = commentPage.getTotalPages();
         if (totalPages > 0) {
             List<Integer> pageNumbers = IntStream.rangeClosed(1, totalPages)
@@ -54,8 +53,9 @@ public class CommentController {
         int currentPage = page.orElse(1);
         int pageSize = size.orElse(5);
         CustomPage<CommentDto> commentPage = commentService.getPageOfCommentsForDocument(documentId, PageRequest.of(currentPage, pageSize));
+        CommentDto newComment = CommentDto.builder().login("User1").documentId(documentId).build();
         model.addAttribute("commentPage", commentPage);
-
+        model.addAttribute("newComment", newComment);
         int totalPages = commentPage.getTotalPages();
         if (totalPages > 0) {
             List<Integer> pageNumbers = IntStream.rangeClosed(1, totalPages)
@@ -65,5 +65,17 @@ public class CommentController {
             model.addAttribute("documentId", documentId);
         }
         return "documentComments";
+    }
+
+    @PostMapping("/comment/project/save")
+    public String saveForProject(@ModelAttribute("comment") CommentDto comment) {
+            CommentDto createdComment = commentService.create(comment);
+        return "redirect:/comment/project/" + createdComment.getProjectId();
+    }
+
+    @PostMapping("/comment/document/save")
+    public String saveForDocument(@ModelAttribute("comment") CommentDto comment) {
+        CommentDto createdComment = commentService.create(comment);
+        return "redirect:/comment/document/" + createdComment.getDocumentId();
     }
 }

@@ -29,6 +29,9 @@
     <a th:href="@{'~/document/download/' + ${document.getId()}}">
         <button th:if="${documentExists}" type="button" class="btn btn-success">DOWNLOAD DOCUMENT</button>
     </a>
+    <a th:href="@{'~/comment/document/' + ${document.getId()}}">
+        <button type="button" class="btn btn-info">COMMENTS</button>
+    </a>
     <h1 th:text="'DOCUMENT ' + ${document.getName()}"></h1>
     <h4 th:text="'Last edit at ' + ${document.getEditTimeWithFormat()}"></h4>
     <p th:if="${document.getReassemblyRequired() && documentExists}" class="alert alert-danger"
@@ -36,8 +39,6 @@
     <p th:text="${warningMessage}" th:if="${warningMessage ne null}" class="alert alert-danger"></p>
 
     <form action="#" method="post" th:action="@{/document/save}" th:object="${document}" enctype="multipart/form-data">
-        <input th:field="*{id}" th:value="${document.getId()}" hidden>
-        <input th:field="*{projectId}" th:value="${document.getProjectId()}" hidden>
         <div>
             <label>Document Name:</label>
             <input th:disabled="${disabled}" type="text" th:field="*{name}" th:placeholder="*{getName()}"/>

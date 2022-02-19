@@ -23,7 +23,19 @@
     </table>
 </div>
 <div style="padding-left: 5%; padding-right: 5%">
+    <a th:href="@{'~/document/view/' + ${documentId}}">
+        <button type="button" class="btn btn-primary">BACK TO DOCUMENT</button>
+    </a>
     <h1 th:text="'Comment List for Document with ID = ' + ${documentId}"></h1>
+    <form action="#" method="post" th:action="@{/comment/document/save}" th:object="${newComment}">
+        <input th:field="${newComment.login}" type="text" th:value="${newComment.getLogin()}" hidden/>
+        <input th:field="${newComment.documentId}" th:value="${newComment.getDocumentId()}" hidden/>
+        <div class="form-group">
+            <label for="newProjectComment">New comment for Project</label>
+            <textarea class="form-control" id="newProjectComment" rows="3" th:field="*{text}"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
     <table id="table-content" class="table table-striped">
         <tbody>
         <tr th:each="comment  : ${commentPage.content}">
@@ -32,24 +44,23 @@
                 <div>&nbsp;</div>
                 <div th:width="100">
                     <div style="float: left; width: 50%" th:text="${comment.getLogin}"></div>
-                    <div style="float: left; width: 50%; text-align: right" th:text="${comment.getPublicationTimeWithFormat()}"></div>
+                    <div style="float: left; width: 50%; text-align: right"
+                         th:text="${comment.getPublicationTimeWithFormat()}"></div>
                 </div>
             </td>
         </tr>
         </tbody>
     </table>
 </div>
-<div th:if="${commentPage.getTotalPages() > 0}" class="pagination"
-     th:each="pageNumber : ${pageNumbers}">
-    <a th:href="@{${documentId}(size=${commentPage.getPageable().getPageSize()}, page=${pageNumber})}"
-       th:text=${pageNumber}
-         th:class="${pageNumber==commentPage.getPageable().getPageNumber()+1} ? active"></a>
-</div>
-<div th:if="${commentPage.getTotalPages() > 0}">
-    <nav th:each="pageNumber : ${pageNumbers}" aria-label="Page navigation example">
-        <ul class="pagination">
-            <li class="page-item">
-                <a class="page-link" th:href="@{${documentId}(size=${commentPage.getPageable().getPageSize()}, page=${pageNumber})}" th:text=${pageNumber}></a>
+<div th:if="${commentPage.getTotalPages() > 1}" style="padding-left: 5%; padding-right: 5%">
+    <nav aria-label="Paginator">
+        <ul class="pagination justify-content-center pagination-lg">
+            <li th:each="pageNumber : ${pageNumbers}"
+                th:class="${pageNumber == commentPage.getPageable().pageNumber} ? 'page-item disabled' : 'page-item'">
+                <a class="page-link"
+                   th:href="@{${documentId}(size=${commentPage.getPageable().getPageSize()}, page=${pageNumber})}"
+                   th:text=${pageNumber}>
+                </a>
             </li>
         </ul>
     </nav>
