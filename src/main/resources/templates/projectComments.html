@@ -8,20 +8,34 @@
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
           integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
           crossorigin="anonymous">
-
+    <link rel="shortcut icon" th:href="@{'~/images/logo.png'}">
 </head>
 <body>
-<div class="row row-no-gutters">
-    <table id="table" class="table table-striped table-condensed">
-        <tbody>
-        <tr align="center">
-            <td><a href="/index">PROJECTS</a></td>
-            <td><a href="/company">COMPANIES</a></td>
-            <td><a href="/user">USERS</a></td>
+<div style="padding-left: 5%; padding-right: 5%" class="row row-no-gutters">
+    <table id="table" class="table" style="border-bottom-width: 5px; border-bottom-color: black; width: 100%">
+        <thead>
+        <tr style="alignment: center">
+            <td style="vertical-align: middle; width: 10%" class="text-left">
+                <a href="/index">
+                    <img width="100" src="../static/images/logo.png" th:src="@{~/images/logo.png}" class="rounded "
+                         alt="logo">
+                </a>
+            </td>
+            <td style="vertical-align: middle; width: 45%">
+                <a href="/company">
+                    <button type="button" class="btn btn-outline-secondary btn-lg btn-block">COMPANIES</button>
+                </a>
+            </td>
+            <td style="vertical-align: middle; width: 45%">
+                <a href="/user">
+                    <button type="button" class="btn btn-outline-secondary btn-lg btn-block">USERS</button>
+                </a>
+            </td>
         </tr>
-        </tbody>
+        </thead>
     </table>
 </div>
+<p></p>
 <div style="padding-left: 5%; padding-right: 5%">
     <a th:href="@{'~/project/view/' + ${projectId}}">
         <button type="button" class="btn btn-primary">BACK TO PROJECT</button>
@@ -34,7 +48,7 @@
             <label for="newProjectComment">New comment for Project</label>
             <textarea class="form-control" id="newProjectComment" rows="3" th:field="*{text}"></textarea>
         </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="submit" class="btn btn-primary">Add Comment</button>
     </form>
 
     <table id="table-content" class="table table-striped">
