@@ -62,18 +62,20 @@ public class CommentRepository {
 
     public CustomPage<CommentEntity> fetchAllByDocumentIdPaginated(Long documentId, Pageable pageable) {
         log.info("Try to find All Comments for Document with id = {}", documentId);
+        int countForLimit = pageable.getPageSize();
+        int countForOffset = (pageable.getPageNumber() - 1) * pageable.getPageSize();
         String getAllCommentsSql =
                 "SELECT id, user_id as userId, content, publication_time as pubTime, project_id as projectId, document_id as documentId " +
                         "FROM bpm_comment " +
-                        "WHERE deleted = 'false' AND document_id = ? " +
+                        "WHERE deleted = false AND document_id = ? " +
                         "ORDER BY pubTime DESC " +
                         "LIMIT ? " +
                         "OFFSET ?";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(getAllCommentsSql)) {
             pstmt.setLong(1, documentId);
-            pstmt.setInt(2, pageable.getPageNumber() * pageable.getPageSize());
-            pstmt.setInt(3, (pageable.getPageNumber() - 1) * pageable.getPageSize());
+            pstmt.setInt(2, countForLimit);
+            pstmt.setInt(3, countForOffset);
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 List<CommentEntity> commentEntityList = new ArrayList<>();
                 while (resultSet.next()) {

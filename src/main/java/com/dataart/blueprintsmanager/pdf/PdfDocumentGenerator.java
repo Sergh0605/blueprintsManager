@@ -77,8 +77,8 @@ public class PdfDocumentGenerator {
             document.close();
             return new PdfDocumentGenerator(os.toByteArray(), font);
         } catch (java.io.IOException e) {
-            log.debug(e.getMessage());
-            throw new PdfCustomApplicationException("Can't read PDF Template");
+            log.debug(e.getMessage(), e);
+            throw new PdfCustomApplicationException("Can't read PDF Template", e);
         }
     }
 
@@ -95,8 +95,8 @@ public class PdfDocumentGenerator {
             document.close();
             return new PdfDocumentGenerator(os.toByteArray(), font);
         } catch (java.io.IOException e) {
-            log.debug(e.getMessage());
-            throw new PdfCustomApplicationException("Can't read PDF Template");
+            log.debug(e.getMessage(), e);
+            throw new PdfCustomApplicationException("PDF document creation ERROR", e);
         }
     }
 
@@ -222,8 +222,8 @@ public class PdfDocumentGenerator {
             document.close();
             return new PdfDocumentGenerator(os.toByteArray(), font);
         } catch (IOException | java.io.IOException e) {
-            log.debug(e.getMessage());
-            throw new PdfCustomApplicationException("Can't read PDF template");
+            log.debug(e.getMessage(), e);
+            throw new PdfCustomApplicationException("PDF document creation ERROR", e);
         }
     }
 
@@ -337,8 +337,8 @@ public class PdfDocumentGenerator {
                 try {
                     mainFont = PdfFontFactory.createFont(font, "Identity-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
                 } catch (java.io.IOException e) {
-                    log.debug(e.getMessage());
-                    throw new PdfCustomApplicationException("Can't find Font file");
+                    log.debug(e.getMessage(), e);
+                    throw new PdfCustomApplicationException("Can't find Font file", e);
                 }
                 Text text = new Text(textForParagraph)
                         .setFont(mainFont)
@@ -408,8 +408,8 @@ public class PdfDocumentGenerator {
                     .setFontSize(millimetersToPoints(5))
                     .setItalic();
         } catch (java.io.IOException e) {
-            log.debug(e.getMessage());
-            throw new PdfCustomApplicationException("Can't find font file");
+            log.debug(e.getMessage(), e);
+            throw new PdfCustomApplicationException("Can't find font file", e);
         }
     }
 

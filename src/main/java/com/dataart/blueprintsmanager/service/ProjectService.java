@@ -66,6 +66,10 @@ public class ProjectService {
     }
 
     public ProjectDto create(ProjectDto projectForSave) {
+        String codeForSave = null;
+        if(!Objects.equals(projectForSave.getCode(), "")) {
+            codeForSave = projectForSave.getCode();
+        }
         ProjectEntity projectForCreationEntity = ProjectEntity.builder()
                 .name(projectForSave.getName())
                 .objectName(projectForSave.getObjectName())
@@ -73,7 +77,7 @@ public class ProjectService {
                 .releaseDate(projectForSave.getReleaseDate())
                 .volumeNumber(projectForSave.getVolumeNumber())
                 .volumeName(projectForSave.getVolumeName())
-                .code(projectForSave.getCode())
+                .code(codeForSave)
                 .designer(userService.getById(projectForSave.getDesignerId()))
                 .supervisor(userService.getById(projectForSave.getSupervisorId()))
                 .chief(userService.getById(projectForSave.getChiefId()))
