@@ -1,7 +1,7 @@
 package com.dataart.blueprintsmanager.service;
 
 import com.dataart.blueprintsmanager.dto.DocumentDto;
-import com.dataart.blueprintsmanager.exceptions.CustomApplicationException;
+import com.dataart.blueprintsmanager.exceptions.EditDocumentException;
 import com.dataart.blueprintsmanager.pdf.CompanyDataForPdf;
 import com.dataart.blueprintsmanager.pdf.DocumentDataForPdf;
 import com.dataart.blueprintsmanager.pdf.PdfDocumentGenerator;
@@ -91,7 +91,7 @@ public class DocumentService {
     public DocumentDto createEditableDocumentForSave(DocumentDto document, MultipartFile file) {
         DocumentType currentDocType = document.getType();
         if (currentDocType == null) {
-            throw new CustomApplicationException("Can't create document. Wrong document type or file type");
+            throw new EditDocumentException("Can't create document. Wrong document type or file type");
         }
         document.setEditTime(LocalDateTime.now());
         if (file.isEmpty()) {
@@ -113,10 +113,10 @@ public class DocumentService {
                     return createDrawing(document, uploadedFileInBytes);
                 }
             }
-            throw new CustomApplicationException("Can't create document. Wrong document type or file type");
+            throw new EditDocumentException("Can't create document. Wrong document type or file type");
         } catch (IOException e) {
             log.debug(e.getMessage(), e);
-            throw new CustomApplicationException("Can't create document, broken file ");
+            throw new EditDocumentException("Can't create document, broken file ", e);
         }
     }
 
@@ -198,10 +198,10 @@ public class DocumentService {
                     return getUpdatedDocument(documentForUpdate, updatableDocument, uploadedFileInBytes);
                 }
             }
-            throw new CustomApplicationException(String.format("Can't update document with id = %d. Wrong document type or file type", documentForUpdate.getId()));
+            throw new EditDocumentException(String.format("Can't update document with id = %d. Wrong document type or file type", documentForUpdate.getId()));
         } catch (IOException e) {
             log.debug(e.getMessage(), e);
-            throw new CustomApplicationException(String.format("Can't update document with id = %d. Broken content file", documentForUpdate.getId()));
+            throw new EditDocumentException(String.format("Can't update document with id = %d. Broken content file", documentForUpdate.getId()), e);
         }
     }
 

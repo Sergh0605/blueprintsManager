@@ -2,6 +2,7 @@ package com.dataart.blueprintsmanager.persistence.repository;
 
 import com.dataart.blueprintsmanager.exceptions.CustomApplicationException;
 import com.dataart.blueprintsmanager.exceptions.DataBaseCustomApplicationException;
+import com.dataart.blueprintsmanager.exceptions.EditProjectException;
 import com.dataart.blueprintsmanager.exceptions.NotFoundCustomApplicationException;
 import com.dataart.blueprintsmanager.persistence.entity.CompanyEntity;
 import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
@@ -95,6 +96,12 @@ public class ProjectRepository {
             connection.setAutoCommit(false);
             try {
                 log.info(String.format("Try to transactional update project with id = %d", project.getId()));
+                Optional<ProjectEntity> existingProject = fetchByCode(project.getCode(), connection);
+                if (existingProject.isPresent()) {
+                    String message = String.format("Can't update code in Project with id = %d. Project with such code already exists.", project.getId());
+                    log.info(message);
+                    throw new EditProjectException(message);
+                }
                 update(project, connection);
                 setDocumentsReassemblyRequiredById(project.getId(), connection);
                 ProjectEntity projectEntity = fetchById(project.getId(), connection);
@@ -121,6 +128,12 @@ public class ProjectRepository {
             connection.setAutoCommit(false);
             try {
                 log.info("Try to Transactional create new project");
+                Optional<ProjectEntity> existingProject = fetchByCode(project.getCode(), connection);
+                if (existingProject.isPresent()) {
+                    String message = String.format("Can't create Project with code = %s. Project with such code already exists.", project.getCode());
+                    log.info(message);
+                    throw new EditProjectException(message);
+                }
                 Long createdProjectId = create(project, connection);
                 ProjectEntity projectEntity = fetchById(createdProjectId, connection);
                 connection.commit();
@@ -210,6 +223,27 @@ public class ProjectRepository {
                     return buildProject(resultSet, connection);
                 }
                 throw new NotFoundCustomApplicationException(String.format("Project with id= %d not found", projectId));
+            }
+        }
+    }
+
+    private Optional<ProjectEntity> fetchByCode(String code, Connection connection) throws SQLException {
+        log.info(String.format("Try to find Project with code = %s", code));
+        String getProjectByCodeSql =
+                "SELECT id, name, object_name as objName, object_address as objAddr, release_date as date, " +
+                        "volume_number as volNumber, subname, code, designer_id as designerId, " +
+                        "supervisor_id as supervisorId, chief_id as chiefId, controller_id as controllerId, " +
+                        "company_id as companyId, stage_id as stageId, reassembly_required as reassembly, edit_time as editTime " +
+                        "FROM bpm_project " +
+                        "WHERE code = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(getProjectByCodeSql)) {
+            pstmt.setString(1, code);
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                if (resultSet.next()) {
+                    log.info(String.format("Project with code = %s found", code));
+                    return Optional.of(buildProject(resultSet, connection));
+                }
+                return Optional.empty();
             }
         }
     }

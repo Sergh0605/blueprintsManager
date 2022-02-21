@@ -10,6 +10,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -23,15 +25,17 @@ import java.util.Optional;
 public class ProjectDto {
     static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
     private Long id;
+    @NotEmpty
     private String name;
     private String objectName;
     private String objectAddress;
-
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate releaseDate;
-
+    @NotNull
     private Long volumeNumber;
+    @NotEmpty
     private String volumeName;
+    @NotEmpty
     private String code;
     private String designerName;
     private String supervisorName;

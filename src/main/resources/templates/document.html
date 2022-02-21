@@ -53,9 +53,14 @@
     <p th:text="${warningMessage}" th:if="${warningMessage ne null}" class="alert alert-danger"></p>
 
     <form action="#" method="post" th:action="@{/document/save}" th:object="${document}" enctype="multipart/form-data">
+        <input th:field="*{id}" th:value="${document.getId()}" hidden>
+        <input th:field="*{projectId}" th:value="${document.getProjectId()}" hidden>
+        <input th:if="${documentExists}" th:field="*{type}" th:value="${document.getType()}" hidden>
+        <input th:if="${documentExists}" th:field="*{reassemblyRequired}" th:value="${document.getReassemblyRequired()}" hidden>
         <div>
             <label>Document Name:</label>
             <input th:disabled="${disabled}" type="text" th:field="*{name}" th:placeholder="*{getName()}"/>
+            <p th:if="${#fields.hasErrors('name')}" style="color: red">Document's name cannot be empty</p>
         </div>
         <div>
             <label>Document Type</label>
@@ -67,36 +72,39 @@
                         th:text="${type.getName()}"
                         th:disabled="${type.isUnmodified()}"></option>
             </select>
-            <div>
-                <label>Designer</label>
-                <select th:disabled="${disabled}" th:type="number" th:field="*{designerId}">
-                    <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
-                            th:selected="${user.getId() == document.getDesignerId()}"></option>
-                </select>
-            </div>
-            <div>
-                <label>Supervisor</label>
-                <select th:disabled="${disabled}" th:type="number" th:field="*{supervisorId}">
-                    <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
-                            th:selected="${user.getId() == document.getSupervisorId()}"></option>
-                </select>
-            </div>
-            <div>
-                <label>Document Full Code:</label>
-                <a th:text="${document.getDocumentFullCode()}"></a>
-            </div>
-            <div>
-                <label>Document Code:</label>
-                <input th:disabled="${disabled}" type="text" th:field="*{code}" th:placeholder="*{getCode()}"/>
-            </div>
-            <div th:if="${!documentExists || !document.getType().isUnmodified()}" class="form-group">
-                <label>Select a file for upload</label>
-                <label>*.txt only for General Information and *.pdf only for Drawing</label>
-                <input th:disabled="${disabled}" type="file" name="file" class="form-control-file">
-            </div>
-
-            <button th:disabled="${disabled}" type="submit" class="btn btn-primary">SAVE</button>
+            <p th:if="${#fields.hasErrors('type')}" style="color: red">Please Choose Document Type</p>
         </div>
+
+        <div>
+            <label>Designer</label>
+            <select th:disabled="${disabled}" th:type="number" th:field="*{designerId}">
+                <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
+                        th:selected="${user.getId() == document.getDesignerId()}"></option>
+            </select>
+        </div>
+        <div>
+            <label>Supervisor</label>
+            <select th:disabled="${disabled}" th:type="number" th:field="*{supervisorId}">
+                <option th:each="user : ${users}" th:value="${user.getId()}" th:text="${user.getName()}"
+                        th:selected="${user.getId() == document.getSupervisorId()}"></option>
+            </select>
+        </div>
+        <div>
+            <label>Document Full Code:</label>
+            <a th:text="${document.getDocumentFullCode()}"></a>
+        </div>
+        <div>
+            <label>Document Code:</label>
+            <input th:disabled="${disabled}" type="text" th:field="*{code}" th:placeholder="*{getCode()}"/>
+            <p th:if="${#fields.hasErrors('code')}" style="color: red">Document's code cannot be empty</p>
+        </div>
+        <div th:if="${!documentExists || !document.getType().isUnmodified()}" class="form-group">
+            <label>Select a file for upload</label>
+            <label>*.txt only for General Information and *.pdf only for Drawing</label>
+            <input th:disabled="${disabled}" type="file" name="file" class="form-control-file">
+        </div>
+
+        <button th:disabled="${disabled}" type="submit" class="btn btn-primary">SAVE</button>
     </form>
 
     <div th:if="${documentExists}">

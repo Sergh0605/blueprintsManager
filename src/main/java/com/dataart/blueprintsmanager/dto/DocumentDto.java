@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -23,9 +25,12 @@ public class DocumentDto {
     private Long id;
     private Long projectId;
     private Integer numberInProject;
+    @NotNull
     private DocumentType type;
     private Long typeId;
+    @NotEmpty
     private String name;
+    @NotEmpty
     private String code;
     private Long designerId;
     private Long supervisorId;

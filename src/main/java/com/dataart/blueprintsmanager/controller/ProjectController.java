@@ -1,6 +1,7 @@
 package com.dataart.blueprintsmanager.controller;
 
 import com.dataart.blueprintsmanager.dto.*;
+import com.dataart.blueprintsmanager.exceptions.EditProjectException;
 import com.dataart.blueprintsmanager.service.*;
 import com.dataart.blueprintsmanager.util.CustomPage;
 import lombok.AllArgsConstructor;
@@ -8,10 +9,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -83,12 +88,34 @@ public class ProjectController {
     }
 
     @PostMapping("/project/save")
-    public String saveProject(@ModelAttribute("project") ProjectDto project) {
+    public String saveProject(@ModelAttribute("project") @Valid ProjectDto project,
+                              BindingResult result,
+                              Model model) {
+        project.setEditTime(LocalDateTime.now());
+        if (project.getReassemblyRequired() == null) {
+            project.setReassemblyRequired(false);
+        }
+        if (result.hasErrors()) {
+            return getProjectPage(project, model, project.getCompanyId(), false, project.getId() != null);
+        }
         Long projectId;
         if (project.getId() == null) {
-            projectId = projectService.create(project).getId();
-        } else projectId = projectService.update(project).getId();
-        return "redirect:/project/view/" + projectId;
+            try {
+                projectId = projectService.create(project).getId();
+                return "redirect:/project/view/" + projectId;
+            } catch (EditProjectException e) {
+                result.addError(new FieldError("project","code", "Project with such code already exists"));
+                return getProjectPage(project, model, project.getCompanyId(), false, project.getId() != null);
+            }
+        } else {
+            try {
+                projectId = projectService.update(project).getId();
+                return "redirect:/project/view/" + projectId;
+            } catch (EditProjectException e) {
+                result.addError(new FieldError("project","code", "Project with such code already exists"));
+                return getProjectPage(project, model, project.getCompanyId(), false, project.getId() != null);
+            }
+        }
     }
 
     @GetMapping(value = {"/project/download/{projectId}"})

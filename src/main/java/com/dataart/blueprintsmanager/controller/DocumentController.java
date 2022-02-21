@@ -3,7 +3,7 @@ package com.dataart.blueprintsmanager.controller;
 import com.dataart.blueprintsmanager.dto.DocumentDto;
 import com.dataart.blueprintsmanager.dto.ProjectDto;
 import com.dataart.blueprintsmanager.dto.UserDto;
-import com.dataart.blueprintsmanager.exceptions.CustomApplicationException;
+import com.dataart.blueprintsmanager.exceptions.EditDocumentException;
 import com.dataart.blueprintsmanager.persistence.entity.DocumentType;
 import com.dataart.blueprintsmanager.service.DocumentService;
 import com.dataart.blueprintsmanager.service.DocumentTypeService;
@@ -13,11 +13,13 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Controller
@@ -65,19 +67,35 @@ public class DocumentController {
 
     @PostMapping("/document/save")
     public String saveDocument(@RequestParam(value = "file", required = false) MultipartFile file,
-                              @ModelAttribute("document") DocumentDto document,
-                              RedirectAttributes attributes) {
+                               @ModelAttribute("document") @Valid DocumentDto document,
+                               BindingResult result,
+                               Model model) {
+        document.setEditTime(LocalDateTime.now());
+        if (document.getReassemblyRequired() == null) {
+            document.setReassemblyRequired(false);
+        }
+        if (result.hasErrors()) {
+            model.addAttribute("document", document);
+            return getDocumentPage(document, model, false, document.getId() != null);
+        }
         Long documentId;
         if (document.getId() == null) {
             try {
                 documentId = documentService.createEditableDocumentForSave(document, file).getId();
                 return "redirect:/document/view/" + documentId;
-            } catch (CustomApplicationException e) {
-                attributes.addFlashAttribute("warningMessage", e.getMessage());
-                return "redirect:/document/new/" + document.getProjectId();
+            } catch (EditDocumentException e) {
+                model.addAttribute("warningMessage", e.getMessage());
+                return getDocumentPage(document, model, false, document.getId() != null);
             }
-        } else documentId = documentService.update(document, file).getId();
-        return "redirect:/document/view/" + documentId;
+        } else {
+            try {
+                documentId = documentService.update(document, file).getId();
+                return "redirect:/document/view/" + documentId;
+            } catch (EditDocumentException e) {
+                model.addAttribute("warningMessage", e.getMessage());
+                return getDocumentPage(document, model, false, document.getId() != null);
+            }
+        }
     }
 
     private String getDocumentPage(DocumentDto document, Model model, boolean fieldsIsDisabled, boolean documentExists) {

@@ -50,9 +50,12 @@
     <h4 th:text="'Last edit at ' + ${project.getEditTimeWithFormat()}"></h4>
     <p th:if="${project.getReassemblyRequired() == true}" class="alert alert-danger"
        th:text="'REASSEMBLY REQUIRED'"></p>
+    <p th:text="${warningMessage}" th:if="${warningMessage ne null}" class="alert alert-danger"></p>
 
     <form action="#" method="post" th:action="@{/project/save}" th:object="${project}">
         <input th:field="*{id}" th:value="${project.getId()}" hidden>
+        <input th:if="${projectExists}" th:field="*{companyId}" th:value="${project.getCompanyId()}" hidden>
+        <input th:if="${projectExists}" th:field="*{reassemblyRequired}" th:value="${project.getReassemblyRequired()}" hidden>
         <div>
             <label>Company Executor</label>
             <select th:disabled="${projectExists}" th:type="number" th:field="*{companyId}"
@@ -103,10 +106,12 @@
             <div>
                 <label>Project Name:</label>
                 <input th:disabled="${disabled}" type="text" th:field="*{name}" th:placeholder="*{getName()}"/>
+                <p th:if="${#fields.hasErrors('name')}" style="color: red">Project's name cannot be empty</p>
             </div>
             <div>
                 <label>Project Code:</label>
                 <input th:disabled="${disabled}" type="text" th:field="*{code}" th:placeholder="*{getCode()}"/>
+                <p th:if="${#fields.hasErrors('code')}" style="color: red">The project code cannot be empty or repeated</p>
             </div>
             <div>
                 <label>Object Name:</label>
@@ -127,11 +132,13 @@
                 <label>Volume Number:</label>
                 <input th:disabled="${disabled}" type="number" th:field="*{volumeNumber}"
                        th:placeholder="*{getVolumeNumber()}"/>
+                <p th:if="${#fields.hasErrors('volumeNumber')}" style="color: red">Project's Volume number cannot be empty</p>
             </div>
             <div>
                 <label>Volume Name:</label>
                 <input th:disabled="${disabled}" type="text" th:field="*{volumeName}"
                        th:placeholder="*{getVolumeName()}"/>
+                <p th:if="${#fields.hasErrors('volumeName')}" style="color: red">Project's Volume name cannot be empty</p>
             </div>
 
             <button th:disabled="${disabled}" type="submit" class="btn btn-primary">SAVE</button>

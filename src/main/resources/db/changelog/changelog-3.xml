@@ -69,4 +69,18 @@
             </column>
         </addColumn>
     </changeSet>
+
+    <changeSet id="DB_fix_uniq_in_project_code" author="S.Puzakov">
+        <addUniqueConstraint
+                tableName="bpm_project"
+                columnNames="code"
+                constraintName="code_unique">
+        </addUniqueConstraint>
+    </changeSet>
+
+    <changeSet id="DB_delete_uniq_in_project_code" author="S.Puzakov">
+        <dropUniqueConstraint
+                tableName="bpm_project"
+                constraintName="code_unique"/>
+    </changeSet>
 </databaseChangeLog>
