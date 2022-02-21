@@ -50,9 +50,10 @@
     <h4 th:text="'Last edit at ' + ${document.getEditTimeWithFormat()}"></h4>
     <p th:if="${document.getReassemblyRequired() && documentExists}" class="alert alert-danger"
        th:text="'REASSEMBLY REQUIRED'"></p>
-    <p th:text="${warningMessage}" th:if="${warningMessage ne null}" class="alert alert-danger"></p>
+
 
     <form action="#" method="post" th:action="@{/document/save}" th:object="${document}" enctype="multipart/form-data">
+        <p th:if="${#fields.hasErrors('documentFileName')}" th:text="${#fields.errors('documentFileName').get(0)}" class="alert-danger"></p>
         <input th:field="*{id}" th:value="${document.getId()}" hidden>
         <input th:field="*{projectId}" th:value="${document.getProjectId()}" hidden>
         <input th:if="${documentExists}" th:field="*{type}" th:value="${document.getType()}" hidden>
@@ -96,7 +97,7 @@
         <div>
             <label>Document Code:</label>
             <input th:disabled="${disabled}" type="text" th:field="*{code}" th:placeholder="*{getCode()}"/>
-            <p th:if="${#fields.hasErrors('code')}" style="color: red">Document's code cannot be empty</p>
+            <p th:if="${#fields.hasErrors('code')}" style="color: red">Document code cannot be empty</p>
         </div>
         <div th:if="${!documentExists || !document.getType().isUnmodified()}" class="form-group">
             <label>Select a file for upload</label>

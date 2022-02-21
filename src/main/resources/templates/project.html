@@ -50,7 +50,6 @@
     <h4 th:text="'Last edit at ' + ${project.getEditTimeWithFormat()}"></h4>
     <p th:if="${project.getReassemblyRequired() == true}" class="alert alert-danger"
        th:text="'REASSEMBLY REQUIRED'"></p>
-    <p th:text="${warningMessage}" th:if="${warningMessage ne null}" class="alert alert-danger"></p>
 
     <form action="#" method="post" th:action="@{/project/save}" th:object="${project}">
         <input th:field="*{id}" th:value="${project.getId()}" hidden>

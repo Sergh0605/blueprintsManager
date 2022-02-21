@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -84,7 +85,7 @@ public class DocumentController {
                 documentId = documentService.createEditableDocumentForSave(document, file).getId();
                 return "redirect:/document/view/" + documentId;
             } catch (EditDocumentException e) {
-                model.addAttribute("warningMessage", e.getMessage());
+                result.addError(new FieldError("document","documentFileName", e.getMessage()));
                 return getDocumentPage(document, model, false, document.getId() != null);
             }
         } else {
@@ -92,7 +93,7 @@ public class DocumentController {
                 documentId = documentService.update(document, file).getId();
                 return "redirect:/document/view/" + documentId;
             } catch (EditDocumentException e) {
-                model.addAttribute("warningMessage", e.getMessage());
+                result.addError(new FieldError("document","documentFileName", e.getMessage()));
                 return getDocumentPage(document, model, false, document.getId() != null);
             }
         }
