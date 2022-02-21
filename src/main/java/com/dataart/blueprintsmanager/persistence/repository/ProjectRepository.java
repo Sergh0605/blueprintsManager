@@ -96,11 +96,14 @@ public class ProjectRepository {
             connection.setAutoCommit(false);
             try {
                 log.info(String.format("Try to transactional update project with id = %d", project.getId()));
-                Optional<ProjectEntity> existingProject = fetchByCode(project.getCode(), connection);
-                if (existingProject.isPresent()) {
-                    String message = String.format("Can't update code in Project with id = %d. Project with such code already exists.", project.getId());
-                    log.info(message);
-                    throw new EditProjectException(message);
+                ProjectEntity projectInDb = fetchById(project.getId(), connection);
+                if (!(projectInDb.getCode().equals(project.getCode()))) {
+                    Optional<ProjectEntity> existingProject = fetchByCode(project.getCode(), connection);
+                    if (existingProject.isPresent()) {
+                        String message = String.format("Can't update code in Project with id = %d. Project with such code already exists.", project.getId());
+                        log.info(message);
+                        throw new EditProjectException(message);
+                    }
                 }
                 update(project, connection);
                 setDocumentsReassemblyRequiredById(project.getId(), connection);
