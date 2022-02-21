@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -32,13 +31,6 @@ public class ProjectController {
     private final UserService userService;
     private final StageService stageService;
     private final DocumentService documentService;
-
-
-    public String index(Model model) throws IOException {
-        List<ProjectDto> projects = projectService.getAll();
-        model.addAttribute("projects", projects);
-        return "index";
-    }
 
     @GetMapping(value = {"/", "/index", "/project"})
     public String indexPageable(

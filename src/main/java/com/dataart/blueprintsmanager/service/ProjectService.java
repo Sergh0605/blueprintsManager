@@ -10,15 +10,13 @@ import com.dataart.blueprintsmanager.util.CustomPage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dataart.blueprintsmanager.util.ApplicationUtil.getFile;
@@ -32,14 +30,6 @@ public class ProjectService {
     private final UserService userService;
     private final CompanyService companyService;
     private final StageService stageService;
-
-    public List<ProjectDto> getAll() {
-        List<ProjectEntity> projects = projectRepository.fetchAll();
-        return projects.stream().
-                filter(Objects::nonNull).
-                map(ProjectDto::new).
-                collect(Collectors.toList());
-    }
 
     public CustomPage<ProjectDto> getAllPaginated(Pageable pageable) {
         CustomPage<ProjectEntity> pageOfProjectEntities = projectRepository.fetchAllPaginated(pageable);
@@ -67,7 +57,7 @@ public class ProjectService {
 
     public ProjectDto create(ProjectDto projectForSave) {
         String codeForSave = null;
-        if(!Objects.equals(projectForSave.getCode(), "")) {
+        if (!Objects.equals(projectForSave.getCode(), "")) {
             codeForSave = projectForSave.getCode();
         }
         ProjectEntity projectForCreationEntity = ProjectEntity.builder()
@@ -150,6 +140,14 @@ public class ProjectService {
             } else project = projectRepository.updateProjectInPdfTransactional(projectId, null);
         }
         return new ProjectDto(project);
+    }
+
+    @Scheduled(cron = "0 0 1 ? * *")
+    public void reassembleAll() {
+        log.info("Try to reassemble by Scheduler all Projects with reassemblyRequired = true");
+        Set<ProjectEntity> projectsForReassembly = projectRepository.fetchAllWithReassemblyRequired();
+        projectsForReassembly.forEach(prj -> reassemble(prj.getId()));
+        log.info("{} Projects reassembled by Scheduler", projectsForReassembly.size());
     }
 
     public void getFileForDownload(Long projectId, HttpServletResponse response) {

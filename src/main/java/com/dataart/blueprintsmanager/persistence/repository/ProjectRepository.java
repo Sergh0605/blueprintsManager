@@ -17,9 +17,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 @Slf4j
@@ -54,25 +52,25 @@ public class ProjectRepository {
         }
     }
 
-    public List<ProjectEntity> fetchAll() {
+    public Set<ProjectEntity> fetchAllWithReassemblyRequired() {
+        log.info("Try to find all Projects with reassemblyRequired = true");
         String getAllProjectsSql =
                 "SELECT id, name, object_name as objName, object_address as objAddr, release_date as date, " +
                         "volume_number as volNumber, subname, code, designer_id as designerId, " +
                         "supervisor_id as supervisorId, chief_id as chiefId, controller_id as controllerId, " +
                         "company_id as companyId, stage_id as stageId, reassembly_required as reassembly, edit_time as editTime " +
                         "FROM bpm_project " +
-                        "WHERE deleted = false " +
-                        "ORDER BY editTime DESC";
+                        "WHERE deleted = false AND reassembly_required = true";
         try (Connection connection = dataSource.getConnection();
              Statement stmt = connection.createStatement();
              ResultSet resultSet = stmt.executeQuery(getAllProjectsSql)) {
-            List<ProjectEntity> projectEntityList = new ArrayList<>();
+            Set<ProjectEntity> projectEntitySet = new HashSet<>();
             while (resultSet.next()) {
                 ProjectEntity project = buildProject(resultSet, connection);
-                projectEntityList.add(project);
+                projectEntitySet.add(project);
             }
-            log.info(String.format("%d Project found", projectEntityList.size()));
-            return projectEntityList;
+            log.info(String.format("%d Projects with reassemblyRequired = true found", projectEntitySet.size()));
+            return projectEntitySet;
         } catch (SQLException e) {
             log.error(e.getMessage());
             throw new DataBaseCustomApplicationException("Database connection error.");
