@@ -83,4 +83,12 @@
                 tableName="bpm_project"
                 constraintName="code_unique"/>
     </changeSet>
+
+    <changeSet id="DB_add_email_in_user" author="S.Puzakov">
+        <addColumn tableName="bpm_user">
+            <column name="email" type="varchar(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

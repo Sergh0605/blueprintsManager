@@ -16,4 +16,5 @@ public class UserEntity {
     private String password;
     private CompanyEntity company;
     private byte[] signature;
+    private String email;
 }

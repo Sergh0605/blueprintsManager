@@ -23,7 +23,7 @@ public class UserRepository {
     public List<UserEntity> fetchAll() {
         log.info("Try to find all users");
         String getAllUsersSql =
-                "SELECT id, last_name as name, login, password, signature, company_id as companyId " +
+                "SELECT id, last_name as name, login, password, signature, company_id as companyId, email " +
                         "FROM bpm_user usr " +
                         "WHERE usr.deleted = 'false' " +
                         "ORDER BY name ";
@@ -70,7 +70,7 @@ public class UserRepository {
     public List<UserEntity> fetchAllByCompanyId(Long companyId) {
         log.info(String.format("Try to find all users for company with id = %d", companyId));
         String getAllUsersSql =
-                "SELECT id as id, last_name as name, login, password, signature, company_id as companyId " +
+                "SELECT id as id, last_name as name, login, password, signature, company_id as companyId, email " +
                         "FROM bpm_user " +
                         "WHERE company_id = ? AND deleted = 'false' " +
                         "ORDER BY name ";
@@ -94,11 +94,11 @@ public class UserRepository {
 
     protected UserEntity fetchById(Long userId, Connection connection, boolean lazyInitialization) throws SQLException {
         log.info(String.format("Try to find user with id = %d", userId));
-        String getCompanyByIdSql =
-                "SELECT id, last_name as name, login, password, company_id as companyId, signature " +
+        String getUserByIdSql =
+                "SELECT id, last_name as name, login, password, company_id as companyId, signature, email " +
                         "FROM bpm_user " +
-                        "WHERE deleted = 'false' AND  id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(getCompanyByIdSql)) {
+                        "WHERE deleted = false AND  id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(getUserByIdSql)) {
             pstmt.setObject(1, userId);
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 if (resultSet.next()) {
@@ -123,6 +123,7 @@ public class UserRepository {
                 .login(resultSet.getString("login"))
                 .password(resultSet.getString("password"))
                 .signature(resultSet.getBytes("signature"))
+                .email(resultSet.getString("email"))
                 .company(company)
                 .build();
     }

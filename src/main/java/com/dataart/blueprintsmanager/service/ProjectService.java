@@ -2,6 +2,7 @@ package com.dataart.blueprintsmanager.service;
 
 import com.dataart.blueprintsmanager.dto.DocumentDto;
 import com.dataart.blueprintsmanager.dto.ProjectDto;
+import com.dataart.blueprintsmanager.email.EmailService;
 import com.dataart.blueprintsmanager.pdf.PdfDocumentGenerator;
 import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
 import com.dataart.blueprintsmanager.persistence.entity.StageEntity;
@@ -10,7 +11,6 @@ import com.dataart.blueprintsmanager.util.CustomPage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
@@ -30,17 +30,11 @@ public class ProjectService {
     private final UserService userService;
     private final CompanyService companyService;
     private final StageService stageService;
+    private final EmailService emailService;
 
     public CustomPage<ProjectDto> getAllPaginated(Pageable pageable) {
         CustomPage<ProjectEntity> pageOfProjectEntities = projectRepository.fetchAllPaginated(pageable);
         return new CustomPage<>(toDtoList(pageOfProjectEntities.getContent()), pageable, pageOfProjectEntities.getTotal());
-    }
-
-    private List<ProjectDto> toDtoList(List<ProjectEntity> entityList) {
-        return entityList.stream().
-                filter(Objects::nonNull).
-                map(ProjectDto::new).
-                collect(Collectors.toList());
     }
 
     public ProjectDto getDtoById(Long projectId) {
@@ -82,6 +76,7 @@ public class ProjectService {
         documentService.createTitlePage(createdProject.getId());
         documentService.createTableOfContents(createdProject.getId());
         reassemble(createdProject.getId());
+        emailService.sendEmailOnProjectCreate(createdProject);
         return new ProjectDto(createdProject);
     }
 
@@ -118,31 +113,17 @@ public class ProjectService {
                 .orElse(projectEntityForUpdate.getStage()));
         projectEntityForUpdate.setReassemblyRequired(true);
         projectEntityForUpdate.setEditTime(LocalDateTime.now());
-        return new ProjectDto(projectRepository
-                .updateTransactional(projectEntityForUpdate));
+        ProjectEntity updatedProject = projectRepository
+                .updateTransactional(projectEntityForUpdate);
+        emailService.sendEmailOnProjectEdit(updatedProject);
+        return new ProjectDto(updatedProject);
     }
 
-    public ProjectDto reassemble(Long projectId) {
-        ProjectEntity project = projectRepository.fetchByIdWrapped(projectId);
-        if (project.getReassemblyRequired()) {
-            List<byte[]> documentsInBytes = new ArrayList<>();
-            List<DocumentDto> documents = documentService.getAllByProjectId(projectId);
-            documents.forEach(doc -> {
-                documentService.reassembleDocument(doc.getId());
-                documentsInBytes.add(documentService.getInPdfById(doc.getId()));
-            });
-            if (documentsInBytes.size() >= 1) {
-                byte[] mergedDocument = documentsInBytes.get(0);
-                for (int i = 1; i < documentsInBytes.size(); i++) {
-                    mergedDocument = PdfDocumentGenerator.mergePdf(mergedDocument, documentsInBytes.get(i));
-                }
-                project = projectRepository.updateProjectInPdfTransactional(projectId, mergedDocument);
-            } else project = projectRepository.updateProjectInPdfTransactional(projectId, null);
-        }
-        return new ProjectDto(project);
+    public ProjectDto reassembleForController(Long projectId) {
+        emailService.sendEmailOnProjectReassembly(projectRepository.fetchByIdWrapped(projectId));
+        return reassemble(projectId);
     }
 
-    @Scheduled(cron = "0 0 1 ? * *")
     public void reassembleAll() {
         log.info("Try to reassemble by Scheduler all Projects with reassemblyRequired = true");
         Set<ProjectEntity> projectsForReassembly = projectRepository.fetchAllWithReassemblyRequired();
@@ -186,5 +167,32 @@ public class ProjectService {
                 .stage(StageEntity.builder().id(1L).build())
                 .reassemblyRequired(false)
                 .editTime(LocalDateTime.now()).build();
+    }
+
+    private ProjectDto reassemble(Long projectId) {
+        ProjectEntity project = projectRepository.fetchByIdWrapped(projectId);
+        if (project.getReassemblyRequired()) {
+            List<byte[]> documentsInBytes = new ArrayList<>();
+            List<DocumentDto> documents = documentService.getAllByProjectId(projectId);
+            documents.forEach(doc -> {
+                documentService.reassembleDocument(doc.getId());
+                documentsInBytes.add(documentService.getInPdfById(doc.getId()));
+            });
+            if (documentsInBytes.size() >= 1) {
+                byte[] mergedDocument = documentsInBytes.get(0);
+                for (int i = 1; i < documentsInBytes.size(); i++) {
+                    mergedDocument = PdfDocumentGenerator.mergePdf(mergedDocument, documentsInBytes.get(i));
+                }
+                project = projectRepository.updateProjectInPdfTransactional(projectId, mergedDocument);
+            } else project = projectRepository.updateProjectInPdfTransactional(projectId, null);
+        }
+        return new ProjectDto(project);
+    }
+
+    private List<ProjectDto> toDtoList(List<ProjectEntity> entityList) {
+        return entityList.stream().
+                filter(Objects::nonNull).
+                map(ProjectDto::new).
+                collect(Collectors.toList());
     }
 }

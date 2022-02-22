@@ -117,7 +117,7 @@ public class ProjectController {
 
     @GetMapping(value = {"/project/assemble/{projectId}"})
     public String reassemble(@PathVariable Long projectId, Model model) {
-        projectService.reassemble(projectId);
+        projectService.reassembleForController(projectId);
         return "redirect:/project/view/" + projectId;
     }
 

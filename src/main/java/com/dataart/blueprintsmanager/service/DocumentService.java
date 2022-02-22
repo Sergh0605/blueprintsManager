@@ -1,6 +1,7 @@
 package com.dataart.blueprintsmanager.service;
 
 import com.dataart.blueprintsmanager.dto.DocumentDto;
+import com.dataart.blueprintsmanager.email.EmailService;
 import com.dataart.blueprintsmanager.exceptions.EditDocumentException;
 import com.dataart.blueprintsmanager.pdf.CompanyDataForPdf;
 import com.dataart.blueprintsmanager.pdf.DocumentDataForPdf;
@@ -37,12 +38,14 @@ public class DocumentService {
     private final String pathForPdfFont;
     private static final DateTimeFormatter releaseDateFormat = DateTimeFormatter.ofPattern("MM.yy");
     private static final DateTimeFormatter releaseDateForCoverFormat = DateTimeFormatter.ofPattern("yyyy");
+    private final EmailService emailService;
 
-    public DocumentService(DocumentRepository documentRepository, DocumentTypeService documentTypeService, UserService userService, @Value("${bpm.pdf.fontfilepath}") String pathForPdfFont) {
+    public DocumentService(DocumentRepository documentRepository, DocumentTypeService documentTypeService, UserService userService, @Value("${bpm.pdf.fontfilepath}") String pathForPdfFont, EmailService emailService) {
         this.documentRepository = documentRepository;
         this.documentTypeService = documentTypeService;
         this.userService = userService;
         this.pathForPdfFont = pathForPdfFont;
+        this.emailService = emailService;
     }
 
 
@@ -96,10 +99,14 @@ public class DocumentService {
         document.setEditTime(LocalDateTime.now());
         if (file.isEmpty()) {
             if (DocumentType.GENERAL_INFORMATION.equals(currentDocType)) {
-                return createGeneralInfo(document, null);
+                DocumentDto createdDocumentDto = createGeneralInfo(document, null);
+                emailService.sendEmailOnDocumentCreate(documentRepository.fetchById(createdDocumentDto.getId()));
+                return createdDocumentDto;
             }
             if (DocumentType.DRAWING.equals(currentDocType)) {
-                return createDrawing(document, null);
+                DocumentDto createdDocumentDto = createDrawing(document, null);
+                emailService.sendEmailOnDocumentCreate(documentRepository.fetchById(createdDocumentDto.getId()));
+                return createdDocumentDto;
             }
         }
         try {
@@ -107,10 +114,14 @@ public class DocumentService {
             String contentType = file.getContentType();
             if (contentType != null) {
                 if (DocumentType.GENERAL_INFORMATION.equals(currentDocType) && contentType.contains("text")) {
-                    return createGeneralInfo(document, uploadedFileInBytes);
+                    DocumentDto createdDocumentDto = createGeneralInfo(document, uploadedFileInBytes);
+                    emailService.sendEmailOnDocumentCreate(documentRepository.fetchById(createdDocumentDto.getId()));
+                    return createdDocumentDto;
                 }
                 if (DocumentType.DRAWING.equals(currentDocType) && contentType.contains("pdf")) {
-                    return createDrawing(document, uploadedFileInBytes);
+                    DocumentDto createdDocumentDto = createDrawing(document, uploadedFileInBytes);
+                    emailService.sendEmailOnDocumentCreate(documentRepository.fetchById(createdDocumentDto.getId()));
+                    return createdDocumentDto;
                 }
             }
             throw new EditDocumentException("Can't create document. Wrong document type or file type");
@@ -181,7 +192,9 @@ public class DocumentService {
         documentForUpdate.setEditTime(LocalDateTime.now());
         if (file == null || file.isEmpty()) {
             if (DocumentType.GENERAL_INFORMATION.equals(currentDocType) || DocumentType.DRAWING.equals(currentDocType)) {
-                return getUpdatedDocument(documentForUpdate, updatableDocument, null);
+                DocumentDto updatedDocument = getUpdatedDocument(documentForUpdate, updatableDocument, null);
+                emailService.sendEmailOnDocumentEdit(documentRepository.fetchById(updatedDocument.getId()));
+                return updatedDocument;
             }
         }
         try {
@@ -192,10 +205,14 @@ public class DocumentService {
                     byte[] textDocumentContentInPdf = new PdfDocumentGenerator(documentTypeService.getFirstPageTemplateByTypeId(currentDocType.getId()), pathForPdfFont)
                             .getFilledTextDocument(uploadedFileInBytes, documentTypeService.getGeneralPageTemplateByTypeId(currentDocType.getId()))
                             .getPdfDocumentInBytes();
-                    return getUpdatedDocument(documentForUpdate, updatableDocument, textDocumentContentInPdf);
+                    DocumentDto updatedDocument = getUpdatedDocument(documentForUpdate, updatableDocument, textDocumentContentInPdf);
+                    emailService.sendEmailOnDocumentEdit(documentRepository.fetchById(updatedDocument.getId()));
+                    return updatedDocument;
                 }
                 if (DocumentType.DRAWING.equals(currentDocType) && contentType.contains("pdf")) {
-                    return getUpdatedDocument(documentForUpdate, updatableDocument, uploadedFileInBytes);
+                    DocumentDto updatedDocument = getUpdatedDocument(documentForUpdate, updatableDocument, uploadedFileInBytes);
+                    emailService.sendEmailOnDocumentEdit(documentRepository.fetchById(updatedDocument.getId()));
+                    return updatedDocument;
                 }
             }
             throw new EditDocumentException(String.format("Can't update document with id = %d. Wrong document type or file type", documentForUpdate.getId()));
