@@ -77,7 +77,7 @@ public class ProjectService {
         documentService.createTableOfContents(createdProject.getId());
         reassemble(createdProject.getId());
         emailService.sendEmailOnProjectCreate(createdProject);
-        return new ProjectDto(createdProject);
+        return new ProjectDto(getById(createdProject.getId()));
     }
 
     public ProjectDto update(ProjectDto projectForUpdate) {
@@ -119,9 +119,9 @@ public class ProjectService {
         return new ProjectDto(updatedProject);
     }
 
-    public ProjectDto reassembleForController(Long projectId) {
+    public void reassembleForController(Long projectId) {
         emailService.sendEmailOnProjectReassembly(projectRepository.fetchByIdWrapped(projectId));
-        return reassemble(projectId);
+        reassemble(projectId);
     }
 
     public void reassembleAll() {

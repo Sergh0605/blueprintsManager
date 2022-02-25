@@ -91,4 +91,8 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet id="DB_update_docTypes_Templates" author="S.Puzakov">
+        <comment>Update Templates</comment>
+        <sqlFile path="sql_scripts/update-to-correct-doc_types-templates.sql" relativeToChangelogFile="true"/>
+    </changeSet>
 </databaseChangeLog>
