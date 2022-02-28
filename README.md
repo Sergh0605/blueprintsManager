@@ -1,6 +1,6 @@
 # BlueprintsManager
 
-This is the SpringNews application. This application developed for education purposes. This app allows you to upload and
+This is the BlueprintsManager application. This application developed for education purposes. This app allows you to upload and
 view articles.
 
 ## Prerequisites

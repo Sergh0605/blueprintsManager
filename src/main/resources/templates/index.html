@@ -89,7 +89,7 @@
                     th:class="${pageNumber == projectPage.getPageable().pageNumber} ? 'page-item disabled' : 'page-item'">
                     <a class="page-link"
                        th:href="@{index(size=${projectPage.getPageable().getPageSize()}, page=${pageNumber})}"
-                       th:text=${pageNumber}>
+                       th:text="${pageNumber}">
                     </a>
                 </li>
             </ul>
