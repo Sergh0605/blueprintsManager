@@ -1,7 +1,6 @@
 # BlueprintsManager
 
-This is the BlueprintsManager application. This application developed for education purposes. This app allows you to upload and
-view articles.
+This is the BlueprintsManager application. This application developed for education purposes. This software designed for automatic preparation design documents according to GOST R 21.101–2020  and download in multipage PDF document.
 
 ## Prerequisites
 
