@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @Slf4j
@@ -21,14 +22,25 @@ public class StageRepository {
 
     public StageEntity fetchById(Long stageId) {
         try (Connection connection = dataSource.getConnection()) {
-                return fetchById(stageId, connection);
+            return fetchById(stageId, connection);
+        } catch (SQLException e) {
+            log.error(e.getMessage());
+            throw new DataBaseCustomApplicationException("Database unexpected error.", e);
+        } catch (CustomApplicationException e) {
+            log.info(e.getMessage());
+            throw e;
+        }
+    }
+
+    protected StageEntity fetchByNullableId(Long stageId, Connection connection) {
+        return Optional.ofNullable(stageId).map(x -> {
+            try {
+                return fetchById(x, connection);
             } catch (SQLException e) {
-                log.error(e.getMessage());
-                throw new DataBaseCustomApplicationException("Database unexpected error.", e);
-            } catch (CustomApplicationException e) {
-                log.info(e.getMessage());
-                throw e;
+                log.error(e.getMessage(), e);
+                throw new DataBaseCustomApplicationException("Database unexpected error", e);
             }
+        }).orElse(null);
     }
 
     public List<StageEntity> fetchAll() {
@@ -56,7 +68,7 @@ public class StageRepository {
     protected StageEntity fetchById(Long stageId, Connection connection) throws SQLException {
         log.info(String.format("Try to find Stage with id = %d", stageId));
         String getStageByIdSql =
-                "SELECT *" +
+                "SELECT * " +
                         "FROM bpm_stage " +
                         "WHERE id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(getStageByIdSql)) {

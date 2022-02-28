@@ -72,26 +72,4 @@ public class DocumentTypeRepository {
             throw new DataBaseCustomApplicationException("Database connection error.", e);
         }
     }
-
-    // TODO: 18.02.2022 delete after the main functionality is completed
-    public void updateTemplate(Long typeId, byte[] firstPage, byte[] secPage) {
-        try (Connection connection = dataSource.getConnection()) {
-            updateTemplateInPdf(typeId, firstPage, secPage, connection);
-        } catch (SQLException e) {
-            log.debug(e.getMessage());
-            throw new DataBaseCustomApplicationException("Database connection error.");
-        }
-    }
-
-    private void updateTemplateInPdf(Long typeId, byte[] firstPage, byte[] secPage, Connection connection) throws SQLException {
-        String updateFileInDocumentByIdSql =
-                "UPDATE  bpm_document_type SET first_page_template = ?, general_page_template = ? " +
-                        "WHERE id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(updateFileInDocumentByIdSql)) {
-            pstmt.setBytes(1, firstPage);
-            pstmt.setBytes(2, secPage);
-            pstmt.setLong(3, typeId);
-            pstmt.executeUpdate();
-        }
-    }
 }

@@ -11,7 +11,6 @@ import com.dataart.blueprintsmanager.persistence.entity.UserEntity;
 import com.dataart.blueprintsmanager.util.CustomPage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
@@ -81,7 +80,7 @@ public class ProjectRepository {
         try (Connection connection = dataSource.getConnection()) {
             return fetchById(projectId, connection);
         } catch (CustomApplicationException e) {
-            log.info(e.getMessage());
+            log.warn(e.getMessage());
             throw e;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -99,7 +98,6 @@ public class ProjectRepository {
                     Optional<ProjectEntity> existingProject = fetchByCode(project.getCode(), connection);
                     if (existingProject.isPresent()) {
                         String message = String.format("Can't update code in Project with id = %d. Project with such code already exists.", project.getId());
-                        log.info(message);
                         throw new EditProjectException(message);
                     }
                 }
@@ -115,7 +113,7 @@ public class ProjectRepository {
                 throw new DataBaseCustomApplicationException("Database unexpected error.", e);
             } catch (CustomApplicationException e) {
                 connection.rollback();
-                log.info(e.getMessage());
+                log.warn(e.getMessage());
                 throw e;
             }
         } catch (SQLException e) {
@@ -408,49 +406,18 @@ public class ProjectRepository {
                 .volumeNumber(resultSet.getLong("volNumber"))
                 .volumeName(resultSet.getString("subname"))
                 .code(resultSet.getString("code"))
-                .designer(getUser((Long) resultSet.getObject("designerId"), connection))
-                .supervisor(getUser((Long) resultSet.getObject("supervisorId"), connection))
-                .chief(getUser((Long) resultSet.getObject("chiefId"), connection))
-                .controller(getUser((Long) resultSet.getObject("controllerId"), connection))
-                .company(getCompany((Long) resultSet.getObject("companyId"), connection))
-                .stage(getStage((Long) resultSet.getObject("stageId"), connection))
+                .designer(userRepository.fetchById((Long) resultSet.getObject("designerId"), connection, true))
+                .supervisor(userRepository.fetchById((Long) resultSet.getObject("supervisorId"), connection, true))
+                .chief(userRepository.fetchById((Long) resultSet.getObject("chiefId"), connection, true))
+                .controller(userRepository.fetchById((Long) resultSet.getObject("controllerId"), connection, true))
+                .company(companyRepository.fetchByNullableId((Long) resultSet.getObject("companyId"), connection))
+                .stage(stageRepository.fetchByNullableId((Long) resultSet.getObject("stageId"), connection))
                 .reassemblyRequired(resultSet.getBoolean("reassembly"))
                 .editTime(resultSet.getTimestamp("editTime").toLocalDateTime())
                 .build();
     }
 
-    private UserEntity getUser(Long userId, Connection connection) {
-        return Optional.ofNullable(userId).map(x -> {
-            try {
-                return userRepository.fetchById(x, connection, true);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataBaseCustomApplicationException("Database Unexpected error", e);
-            }
-        }).orElse(null);
-    }
 
-    private CompanyEntity getCompany(Long companyId, Connection connection) {
-        return Optional.ofNullable(companyId).map(x -> {
-            try {
-                return companyRepository.fetchById(x, connection);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataBaseCustomApplicationException("Database Unexpected error", e);
-            }
-        }).orElse(null);
-    }
-
-    private StageEntity getStage(Long stageId, Connection connection) {
-        return Optional.ofNullable(stageId).map(x -> {
-            try {
-                return stageRepository.fetchById(x, connection);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataBaseCustomApplicationException("Database unexpected error", e);
-            }
-        }).orElse(null);
-    }
 
     public CustomPage<ProjectEntity> fetchAllPaginated(Pageable pageable) {
         log.info("Try to find {} page with {} Projects", pageable.getPageNumber(), pageable.getPageSize());
@@ -478,7 +445,7 @@ public class ProjectRepository {
                 }
                 log.info(String.format("%d Projects found on page %d", projectEntityList.size(), pageable.getPageNumber()));
                 Integer countOfProjects = fetchCountOfProjects(connection);
-                return new CustomPage<>(projectEntityList, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()), countOfProjects);
+                return new CustomPage<>(projectEntityList, pageable, countOfProjects);
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);

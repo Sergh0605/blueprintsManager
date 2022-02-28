@@ -10,7 +10,6 @@ import com.dataart.blueprintsmanager.persistence.entity.UserEntity;
 import com.dataart.blueprintsmanager.util.CustomPage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
@@ -52,7 +51,7 @@ public class CommentRepository {
                 }
                 log.info(String.format("%d Comments found", commentEntityList.size()));
                 Integer countOfComments = fetchCountOfCommentsByProjectId(projectId, connection);
-                return new CustomPage<>(commentEntityList, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()), countOfComments);
+                return new CustomPage<>(commentEntityList, pageable, countOfComments);
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -82,9 +81,9 @@ public class CommentRepository {
                     CommentEntity comment = buildComment(resultSet);
                     commentEntityList.add(comment);
                 }
-                log.info(String.format("%d Companies found", commentEntityList.size()));
+                log.info(String.format("%d Comments found", commentEntityList.size()));
                 Integer countOfComments = fetchCountOfCommentsByDocumentId(documentId, connection);
-                return new CustomPage<>(commentEntityList, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()), countOfComments);
+                return new CustomPage<>(commentEntityList, pageable, countOfComments);
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -118,7 +117,7 @@ public class CommentRepository {
         String getCommentCountByProjectIdSql =
                 "SELECT COUNT(*) as commentCount " +
                         "FROM bp_manager.public.bpm_comment " +
-                        "WHERE deleted = 'false' AND  project_id = ?";
+                        "WHERE deleted = false AND  document_id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(getCommentCountByProjectIdSql)) {
             pstmt.setLong(1, documentId);
             try (ResultSet resultSet = pstmt.executeQuery()) {
@@ -192,7 +191,7 @@ public class CommentRepository {
             pstmt.setLong(2, comment.getProject().getId());
             pstmt.setObject(3, comment.getDocument().getId());
             pstmt.setString(4, comment.getText());
-            pstmt.setTimestamp(5, Timestamp.valueOf(comment.getPublicationDateTime()));
+            pstmt.setObject(5, comment.getPublicationDateTime());
             pstmt.executeUpdate();
             try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {

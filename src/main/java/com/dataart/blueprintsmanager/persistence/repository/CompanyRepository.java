@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @Slf4j
@@ -29,6 +30,17 @@ public class CompanyRepository {
             log.info(e.getMessage());
             throw e;
         }
+    }
+
+    protected CompanyEntity fetchByNullableId(Long companyId, Connection connection) {
+        return Optional.ofNullable(companyId).map(x -> {
+            try {
+                return fetchById(x, connection);
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new DataBaseCustomApplicationException("Database Unexpected error", e);
+            }
+        }).orElse(null);
     }
 
     public List<CompanyEntity> fetchAll() {

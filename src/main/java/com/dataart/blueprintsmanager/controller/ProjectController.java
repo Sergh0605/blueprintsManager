@@ -91,22 +91,17 @@ public class ProjectController {
             return getProjectPage(project, model, project.getCompanyId(), false, project.getId() != null);
         }
         Long projectId;
-        if (project.getId() == null) {
-            try {
+        try {
+            if (project.getId() == null) {
                 projectId = projectService.create(project).getId();
-                return "redirect:/project/view/" + projectId;
-            } catch (EditProjectException e) {
-                result.addError(new FieldError("project","code", "Project with such code already exists"));
-                return getProjectPage(project, model, project.getCompanyId(), false, project.getId() != null);
-            }
-        } else {
-            try {
+
+            } else {
                 projectId = projectService.update(project).getId();
-                return "redirect:/project/view/" + projectId;
-            } catch (EditProjectException e) {
-                result.addError(new FieldError("project","code", "Project with such code already exists"));
-                return getProjectPage(project, model, project.getCompanyId(), false, project.getId() != null);
             }
+            return "redirect:/project/view/" + projectId;
+        } catch (EditProjectException e) {
+            result.addError(new FieldError("project", "code", "Project with such code already exists"));
+            return getProjectPage(project, model, project.getCompanyId(), false, project.getId() != null);
         }
     }
 

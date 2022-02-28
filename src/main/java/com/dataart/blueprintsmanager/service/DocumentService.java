@@ -39,13 +39,25 @@ public class DocumentService {
     private static final DateTimeFormatter releaseDateFormat = DateTimeFormatter.ofPattern("MM.yy");
     private static final DateTimeFormatter releaseDateForCoverFormat = DateTimeFormatter.ofPattern("yyyy");
     private final EmailService emailService;
+    private final String pdfFileNameTemplate;
+    private final String defaultDocumentName;
+    private final String defaultDocumentCode;
 
-    public DocumentService(DocumentRepository documentRepository, DocumentTypeService documentTypeService, UserService userService, @Value("${bpm.pdf.fontfilepath}") String pathForPdfFont, EmailService emailService) {
+    public DocumentService(DocumentRepository documentRepository, DocumentTypeService documentTypeService,
+                           UserService userService,
+                           @Value("${bpm.pdf.fontfilepath}") String pathForPdfFont,
+                           EmailService emailService,
+                           @Value("${bpm.document.filename.format}") String pdfFileNameTemplate,
+                           @Value("${bpm.document.default.name}") String defaultDocumentName,
+                           @Value("${bpm.document.default.code}") String defaultDocumentCode) {
         this.documentRepository = documentRepository;
         this.documentTypeService = documentTypeService;
         this.userService = userService;
         this.pathForPdfFont = pathForPdfFont;
         this.emailService = emailService;
+        this.pdfFileNameTemplate = pdfFileNameTemplate;
+        this.defaultDocumentName = defaultDocumentName;
+        this.defaultDocumentCode = defaultDocumentCode;
     }
 
 
@@ -170,8 +182,7 @@ public class DocumentService {
     public void getFileForDownload(Long documentId, HttpServletResponse response) {
         DocumentEntity document = documentRepository.fetchById(documentId);
         byte[] documentInPdf = documentRepository.fetchDocumentInPdfByDocumentId(documentId);
-        // TODO: 16.02.2022 additionally format string could be stored in properties ???
-        String documentFileName = String.format("%s_%s.pdf", getFullCode(document), document.getName());
+        String documentFileName = String.format(pdfFileNameTemplate, getFullCode(document), document.getName());
         getFile(response, documentInPdf, documentFileName);
     }
 
@@ -368,8 +379,8 @@ public class DocumentService {
                 .id(null)
                 .numberInProject(0)
                 .documentType(DocumentType.DRAWING)
-                .name("Новый документ")
-                .code("NEW")
+                .name(defaultDocumentName)
+                .code(defaultDocumentCode)
                 .designer(new UserEntity())
                 .supervisor(new UserEntity())
                 .reassemblyRequired(true)

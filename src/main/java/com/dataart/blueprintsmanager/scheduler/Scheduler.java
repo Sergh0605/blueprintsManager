@@ -13,8 +13,10 @@ public class Scheduler {
     private final ProjectService projectService;
 
     // Every day at 01:00am
-    @Scheduled(cron = "0 0 1 ? * *")
+    @Scheduled(cron = "${bpm.cron.reassembly}")
     public void reassembleAllProjectsByScheduler(){
-        projectService.reassembleAll();
+        log.info("Try to reassemble by Scheduler all Projects with reassemblyRequired = true");
+        Integer countOfReassembledProjects = projectService.reassembleAll();
+        log.info("{} Projects reassembled by Scheduler", countOfReassembledProjects);
     }
 }

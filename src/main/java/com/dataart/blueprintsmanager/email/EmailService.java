@@ -5,7 +5,6 @@ import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
 import com.dataart.blueprintsmanager.persistence.entity.UserEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -15,8 +14,6 @@ import org.thymeleaf.context.Context;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
-import javax.mail.util.ByteArrayDataSource;
-import java.io.ByteArrayInputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Optional;
@@ -36,28 +33,6 @@ public class EmailService {
         this.emailSender = emailSender;
         this.from = from;
         this.applicationUrl = applicationUrl;
-    }
-
-    public void sendMessageWithAttachment(
-            String to, String subject, String text, byte[] fileToSend) {
-        log.info("Try to send email to {}", to);
-        MimeMessage message = emailSender.createMimeMessage();
-        MimeMessageHelper helper = null;
-        try {
-            helper = new MimeMessageHelper(message, true);
-            helper.setFrom(from);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(text);
-            ByteArrayDataSource attachment = new ByteArrayDataSource(fileToSend, "application/octet-stream");
-            InputStreamResource inputStreamResource = new InputStreamResource(new ByteArrayInputStream(fileToSend));
-            helper.addAttachment("project.pdf", attachment);
-
-            emailSender.send(message);
-        } catch (MessagingException e) {
-            throw new RuntimeException(e);
-        }
-        log.info("Email to {} was send", to);
     }
 
     @Async
@@ -101,7 +76,7 @@ public class EmailService {
             try {
                 sendEmail(to, subject, process);
             } catch (Exception e) {
-                log.info("Unable to send email notification for user {}  with email address = {} in Project {}", user.getLogin(), user.getEmail(), project.getId(), e);
+                log.warn("Unable to send email notification for user {}  with email address = {} in Project {}", user.getLogin(), user.getEmail(), project.getId(), e);
                 return;
             }
             log.info("Email notification for user {} in Project {} has been send", user.getLogin(), project.getId());
@@ -124,7 +99,7 @@ public class EmailService {
             try {
                 sendEmail(to, subject, process);
             } catch (Exception e) {
-                log.info("Unable to send email notification for user {} with email address = {} in Document {}", user.getLogin(), user.getEmail(), document.getId());
+                log.warn("Unable to send email notification for user {} with email address = {} in Document {}", user.getLogin(), user.getEmail(), document.getId());
                 return;
             }
             log.info("Email notification for user {} in Document {} has been send", user.getLogin(), document.getId());

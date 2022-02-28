@@ -47,15 +47,15 @@ public class CommentService {
     }
 
     public CommentDto create(CommentDto comment) {
-        if (comment != null && comment.getLogin() != null && (comment.getProjectId() != null || comment.getDocumentId() != null)) {
+        if (comment == null || comment.getLogin() == null || (comment.getProjectId() == null && comment.getDocumentId() == null)) {
+            throw new CustomApplicationException("Can't save comment. Wrong fields content.");
+        } else {
             Long projectId = null;
             Long documentId = null;
             Long userId = userService.getByLogin(comment.getLogin()).getId();
             if (comment.getProjectId() != null) {
                 projectId = projectService.getDtoById(comment.getProjectId()).getId();
-                documentId = Optional.ofNullable(comment.getDocumentId()).map(docId -> documentService.getById(docId).getId()).orElse(null);
-            }
-            if (comment.getDocumentId() != null) {
+            } else if (comment.getDocumentId() != null) {
                 DocumentDto document = documentService.getById(comment.getDocumentId());
                 documentId = document.getId();
                 projectId = document.getProjectId();
@@ -69,6 +69,5 @@ public class CommentService {
                     .build();
             return new CommentDto(commentRepository.createTransactional(commentForCreate));
         }
-        throw new CustomApplicationException("Can't save comment. Wrong fields content.");
     }
 }

@@ -131,7 +131,7 @@ public class UserRepository {
     protected UserEntity fetchByLogin(String login, Connection connection) throws SQLException {
         log.info(String.format("Try to find user with Login = %s", login));
         String getUserByLoginSql =
-                "SELECT id, last_name as name, login, password, company_id as companyId, signature " +
+                "SELECT id, last_name as name, login, password, company_id as companyId, signature, email " +
                         "FROM bpm_user " +
                         "WHERE deleted = 'false' AND  login = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(getUserByLoginSql)) {

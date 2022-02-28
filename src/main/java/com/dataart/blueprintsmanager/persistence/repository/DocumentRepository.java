@@ -37,7 +37,6 @@ public class DocumentRepository {
         ) {
             pstmt.setLong(1, projectId);
             try (ResultSet resultSet = pstmt.executeQuery()) {
-                Integer documentsCount = 0;
                 List<DocumentEntity> documentEntityList = new ArrayList<>();
                 while (resultSet.next()) {
                     DocumentEntity document = buildDocument(resultSet, connection);

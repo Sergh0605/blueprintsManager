@@ -80,23 +80,18 @@ public class DocumentController {
             return getDocumentPage(document, model, false, document.getId() != null);
         }
         Long documentId;
-        if (document.getId() == null) {
-            try {
-                documentId = documentService.createEditableDocumentForSave(document, file).getId();
-                return "redirect:/document/view/" + documentId;
-            } catch (EditDocumentException e) {
-                result.addError(new FieldError("document","documentFileName", e.getMessage()));
-                return getDocumentPage(document, model, false, document.getId() != null);
+        try {
+            if (document.getId() == null) {
+                    documentId = documentService.createEditableDocumentForSave(document, file).getId();
+            } else {
+                    documentId = documentService.update(document, file).getId();
             }
-        } else {
-            try {
-                documentId = documentService.update(document, file).getId();
-                return "redirect:/document/view/" + documentId;
-            } catch (EditDocumentException e) {
-                result.addError(new FieldError("document","documentFileName", e.getMessage()));
-                return getDocumentPage(document, model, false, document.getId() != null);
-            }
+            return "redirect:/document/view/" + documentId;
+        } catch (EditDocumentException e) {
+            result.addError(new FieldError("document","documentFileName", e.getMessage()));
+            return getDocumentPage(document, model, false, document.getId() != null);
         }
+
     }
 
     private String getDocumentPage(DocumentDto document, Model model, boolean fieldsIsDisabled, boolean documentExists) {

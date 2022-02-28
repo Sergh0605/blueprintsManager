@@ -6,6 +6,7 @@ import com.dataart.blueprintsmanager.exceptions.EditProjectException;
 import com.dataart.blueprintsmanager.persistence.entity.DocumentType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.util.Assert;
 
 import java.time.LocalDate;
@@ -16,7 +17,7 @@ class ProjectServiceTest extends BlueprintsManagerApplicationTests {
 
 
     @Test
-    void getDtoById() {
+    void whenProjectExistsThenGetDtoById() {
         Long id = 1L;
         String code = "TestCode";
         ProjectDto createdProjectDto = projectService.create(getDto(id, code));
@@ -25,7 +26,7 @@ class ProjectServiceTest extends BlueprintsManagerApplicationTests {
     }
 
     @Test
-    void create() {
+    void whenNormalFieldsThenCreateProject() {
         Long id = null;
         String code = "TestCode";
         ProjectDto createdProjectDto = projectService.create(getDto(id, code));
@@ -40,10 +41,11 @@ class ProjectServiceTest extends BlueprintsManagerApplicationTests {
                                 (d.getNumberInProject() == 2 && DocumentType.TITLE_PAGE.equals(d.getType())) ||
                                 (d.getNumberInProject() == 3 && DocumentType.TABLE_OF_CONTENTS.equals(d.getType()))),
                 "Incorrect type of created documents in Project.");
+        Mockito.verify(emailService, Mockito.times(1)).sendEmailOnProjectCreate(Mockito.any());
     }
 
     @Test
-    void createWithDuplicateCode() {
+    void whenDuplicateCodeThenCreateProjectWithException() {
         Long id = null;
         String code = "TestCode";
         projectService.create(getDto(id, code));
@@ -53,7 +55,7 @@ class ProjectServiceTest extends BlueprintsManagerApplicationTests {
     }
 
     @Test
-    void update() {
+    void whenNormalFieldsThenUpdateProject() {
         Long id = null;
         String code = "TestCode";
         String newProjectName = "Обновленный тестовый том.";
@@ -62,10 +64,11 @@ class ProjectServiceTest extends BlueprintsManagerApplicationTests {
         ProjectDto updatedProject = projectService.update(createdProject);
         Assert.isTrue(newProjectName.equals(updatedProject.getName()) && updatedProject.getReassemblyRequired(),
                 "Project not updated.");
+        Mockito.verify(emailService, Mockito.times(1)).sendEmailOnProjectEdit(Mockito.any());
     }
 
     @Test
-    void updateWithDuplicateCode() {
+    void whenDuplicateCodeThenUpdateWithException() {
         Long id = null;
         String codeForExistedProject = "Old Code";
         String codeForUpdatableProject = "Updatable Code";
@@ -78,7 +81,7 @@ class ProjectServiceTest extends BlueprintsManagerApplicationTests {
     }
 
     @Test
-    void reassembleForController() {
+    void whenNormalFieldsThenReassembleProject() {
         Long id = null;
         String code = "TestCode";
         String newProjectName = "Обновленный тестовый том.";
@@ -89,6 +92,7 @@ class ProjectServiceTest extends BlueprintsManagerApplicationTests {
         projectService.reassembleForController(updatedProject.getId());
         byte[] projectInPdfAfterReassembly = projectRepository.fetchProjectInPdfByProjectId(updatedProject.getId());
         Assertions.assertNotEquals(projectInPdfAfterUpdate, projectInPdfAfterReassembly, "Project was not reassembled after update.");
+        Mockito.verify(emailService, Mockito.times(1)).sendEmailOnProjectReassembly(Mockito.any());
     }
 
     private ProjectDto getDto(Long id, String code) {

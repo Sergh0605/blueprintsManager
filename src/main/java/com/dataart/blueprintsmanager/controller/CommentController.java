@@ -11,7 +11,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -24,13 +23,13 @@ public class CommentController {
     @GetMapping(value = "/comment/project/{projectId}")
     public String projectCommentsPage(
             Model model,
-            @RequestParam("page") Optional<Integer> page,
-            @RequestParam("size") Optional<Integer> size,
+            @RequestParam(name = "page", defaultValue = "1") Integer page,
+            @RequestParam(name = "size", defaultValue = "5") Integer size,
             @PathVariable Long projectId) {
-        int currentPage = page.orElse(1);
-        int pageSize = size.orElse(5);
+        int currentPage = page;
+        int pageSize = size;
         CustomPage<CommentDto> commentPage = commentService.getPageOfCommentsForProject(projectId, PageRequest.of(currentPage, pageSize));
-        CommentDto newComment = CommentDto.builder().login("User1").projectId(projectId).build();
+        CommentDto newComment = CommentDto.builder().login("Petrov").projectId(projectId).build();
         model.addAttribute("commentPage", commentPage);
         model.addAttribute("newComment", newComment);
         int totalPages = commentPage.getTotalPages();
@@ -47,13 +46,13 @@ public class CommentController {
     @GetMapping(value = "/comment/document/{documentId}")
     public String documentCommentsPage(
             Model model,
-            @RequestParam("page") Optional<Integer> page,
-            @RequestParam("size") Optional<Integer> size,
+            @RequestParam(name = "page", defaultValue = "1") Integer page,
+            @RequestParam(name = "size", defaultValue = "5") Integer size,
             @PathVariable Long documentId) {
-        int currentPage = page.orElse(1);
-        int pageSize = size.orElse(5);
+        int currentPage = page;
+        int pageSize = size;
         CustomPage<CommentDto> commentPage = commentService.getPageOfCommentsForDocument(documentId, PageRequest.of(currentPage, pageSize));
-        CommentDto newComment = CommentDto.builder().login("User1").documentId(documentId).build();
+        CommentDto newComment = CommentDto.builder().login("Petrov").documentId(documentId).build();
         model.addAttribute("commentPage", commentPage);
         model.addAttribute("newComment", newComment);
         int totalPages = commentPage.getTotalPages();

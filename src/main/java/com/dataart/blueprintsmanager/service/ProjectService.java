@@ -8,8 +8,8 @@ import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
 import com.dataart.blueprintsmanager.persistence.entity.StageEntity;
 import com.dataart.blueprintsmanager.persistence.repository.ProjectRepository;
 import com.dataart.blueprintsmanager.util.CustomPage;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +23,6 @@ import static com.dataart.blueprintsmanager.util.ApplicationUtil.getFile;
 
 @Service
 @Slf4j
-@AllArgsConstructor
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final DocumentService documentService;
@@ -31,6 +30,41 @@ public class ProjectService {
     private final CompanyService companyService;
     private final StageService stageService;
     private final EmailService emailService;
+    private final String pdfFileNameTemplate;
+    private final String defaultProjectName;
+    private final String defaultObjName;
+    private final String defaultObjAddress;
+    private final Long defaultVolumeNumber;
+    private final String defaultVolumeName;
+    private final String defaultCode;
+
+    public ProjectService(ProjectRepository projectRepository,
+                          DocumentService documentService,
+                          UserService userService,
+                          CompanyService companyService,
+                          StageService stageService,
+                          EmailService emailService,
+                          @Value("${bpm.project.filename.format}") String pdfFileNameTemplate,
+                          @Value("${bpm.project.default.name}") String defaultProjectName,
+                          @Value("${bpm.project.default.objName}") String defaultObjName,
+                          @Value("${bpm.project.default.objAddress}") String defaultObjAddress,
+                          @Value("${bpm.project.default.volumeNumber}") Long defaultVolumeNumber,
+                          @Value("${bpm.project.default.volumeName}") String defaultVolumeName,
+                          @Value("${bpm.project.default.code}") String defaultCode) {
+        this.projectRepository = projectRepository;
+        this.documentService = documentService;
+        this.userService = userService;
+        this.companyService = companyService;
+        this.stageService = stageService;
+        this.emailService = emailService;
+        this.pdfFileNameTemplate = pdfFileNameTemplate;
+        this.defaultProjectName = defaultProjectName;
+        this.defaultObjName = defaultObjName;
+        this.defaultObjAddress = defaultObjAddress;
+        this.defaultVolumeNumber = defaultVolumeNumber;
+        this.defaultVolumeName = defaultVolumeName;
+        this.defaultCode = defaultCode;
+    }
 
     public CustomPage<ProjectDto> getAllPaginated(Pageable pageable) {
         CustomPage<ProjectEntity> pageOfProjectEntities = projectRepository.fetchAllPaginated(pageable);
@@ -124,18 +158,16 @@ public class ProjectService {
         reassemble(projectId);
     }
 
-    public void reassembleAll() {
-        log.info("Try to reassemble by Scheduler all Projects with reassemblyRequired = true");
+    public Integer reassembleAll() {
         Set<ProjectEntity> projectsForReassembly = projectRepository.fetchAllWithReassemblyRequired();
         projectsForReassembly.forEach(prj -> reassemble(prj.getId()));
-        log.info("{} Projects reassembled by Scheduler", projectsForReassembly.size());
+        return projectsForReassembly.size();
     }
 
     public void getFileForDownload(Long projectId, HttpServletResponse response) {
         ProjectEntity project = projectRepository.fetchByIdWrapped(projectId);
         byte[] documentInPdf = projectRepository.fetchProjectInPdfByProjectId(projectId);
-        // TODO: 18.02.2022 store format in properties 
-        String projectFileName = "%s_Том%d_%s.pdf".formatted(project.getCode(), project.getVolumeNumber(), project.getVolumeName());
+        String projectFileName = pdfFileNameTemplate.formatted(project.getCode(), project.getVolumeNumber(), project.getVolumeName());
         getFile(response, documentInPdf, projectFileName);
     }
 
@@ -157,13 +189,13 @@ public class ProjectService {
     private ProjectEntity getEmpty() {
         return ProjectEntity.builder()
                 .id(null)
-                .name("Новый проект")
-                .objectName("")
-                .objectAddress("")
+                .name(defaultProjectName)
+                .objectName(defaultObjName)
+                .objectAddress(defaultObjAddress)
                 .releaseDate(LocalDate.now())
-                .volumeNumber(1L)
-                .volumeName("")
-                .code("NEW")
+                .volumeNumber(defaultVolumeNumber)
+                .volumeName(defaultVolumeName)
+                .code(defaultCode)
                 .stage(StageEntity.builder().id(1L).build())
                 .reassemblyRequired(false)
                 .editTime(LocalDateTime.now()).build();

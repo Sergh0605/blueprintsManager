@@ -9,61 +9,51 @@
           integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
           crossorigin="anonymous">
     <link rel="shortcut icon" th:href="@{'~/images/logo.png'}">
-
 </head>
 <body>
-<div style="padding-left: 5%; padding-right: 5%" class="row row-no-gutters">
-    <table id="table" class="table" style="border-bottom-width: 5px; border-bottom-color: black; width: 100%">
-        <thead>
-        <tr style="alignment: center">
-            <td style="vertical-align: middle; width: 10%" class="text-left">
-                <a href="/index">
-                    <img width="100" src="../static/images/logo.png" th:src="@{~/images/logo.png}" class="rounded "
-                         alt="logo">
-                </a>
-            </td>
-            <td style="vertical-align: middle; width: 45%">
-                <a href="/company">
-                    <button type="button" class="btn btn-outline-secondary btn-lg btn-block">COMPANIES</button>
-                </a>
-            </td>
-            <td style="vertical-align: middle; width: 45%">
-                <a href="/user">
-                    <button type="button" class="btn btn-outline-secondary btn-lg btn-block">USERS</button>
-                </a>
-            </td>
-        </tr>
-        </thead>
-    </table>
-</div>
+<div th:insert="header :: header"></div>
 <p></p>
-<div style="padding-left: 5%; padding-right: 5%">
+<div style="padding-left: 10%; padding-right: 10%">
     <a th:href="@{'~/project/new'}">
         <button type="button" class="btn btn-primary">CREATE NEW PROJECT</button>
     </a>
     <h1>Projects list</h1>
     <table id="table-content" class="table table-striped">
-        <tbody>
+        <thead>
         <tr>
-            <td><a>CODE</a></td>
-            <td><a>NAME</a></td>
-            <td><a>EXECUTOR</a></td>
-            <td><a>STAGE CODE</a></td>
-            <td><a>EDIT TIME</a></td>
-            <td><a>REASSEMBLING REQUIRED</a></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <th><a>CODE</a></th>
+            <th><a>NAME</a></th>
+            <th><a>EXECUTOR</a></th>
+            <th><a>STAGE CODE</a></th>
+            <th><a>EDIT TIME</a></th>
+            <th><a>PDF STATUS</a></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
         </tr>
+        </thead>
+        <tbody>
         <tr th:each="project : ${projectPage.getContent()}">
             <td><a th:text="${project.getCode()}"></a></td>
             <td><a th:text="${project.getName()}"></a></td>
             <td><a th:text="${project.getCompanyName()}"></a></td>
             <td><a th:text="${project.getStageName()}"></a></td>
             <td><a th:text="${project.getEditTimeWithFormat()}"></a></td>
-            <td><a th:text="${project.getReassemblyRequired()}"></a></td>
+            <td align="center">
+                <svg th:if="${!project.getReassemblyRequired()}" xmlns="http://www.w3.org/2000/svg" width="30"
+                     height="30" fill="currentColor" class="bi bi-check-circle-fill text-success"
+                     viewBox="0 0 16 16">
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                </svg>
+                <svg th:if="${project.getReassemblyRequired()}" xmlns="http://www.w3.org/2000/svg"
+                     width="30" height="30" fill="currentColor"
+                     class="bi bi-exclamation-circle-fill text-warning"
+                     viewBox="0 0 16 16">
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
+                </svg>
+            </td>
             <td>
                 <a th:href="@{'~/comment/project/' + ${project.getId()}}">
                     <button type="button" class="btn btn-info">COMMENTS</button>
