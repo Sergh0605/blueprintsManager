@@ -1,25 +1,26 @@
 package com.dataart.blueprintsmanager.service;
 
-import com.dataart.blueprintsmanager.dto.DocumentDto;
-import com.dataart.blueprintsmanager.dto.ProjectDto;
 import com.dataart.blueprintsmanager.email.EmailService;
+import com.dataart.blueprintsmanager.exceptions.EditProjectException;
+import com.dataart.blueprintsmanager.exceptions.NotFoundCustomApplicationException;
 import com.dataart.blueprintsmanager.pdf.PdfDocumentGenerator;
+import com.dataart.blueprintsmanager.persistence.entity.DocumentEntity;
+import com.dataart.blueprintsmanager.persistence.entity.FileEntity;
 import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
-import com.dataart.blueprintsmanager.persistence.entity.StageEntity;
 import com.dataart.blueprintsmanager.persistence.repository.ProjectRepository;
-import com.dataart.blueprintsmanager.util.CustomPage;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletResponse;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
-import static com.dataart.blueprintsmanager.util.ApplicationUtil.getFile;
+import static com.dataart.blueprintsmanager.persistence.entity.DocumentType.*;
 
 @Service
 @Slf4j
@@ -30,13 +31,8 @@ public class ProjectService {
     private final CompanyService companyService;
     private final StageService stageService;
     private final EmailService emailService;
-    private final String pdfFileNameTemplate;
-    private final String defaultProjectName;
-    private final String defaultObjName;
-    private final String defaultObjAddress;
-    private final Long defaultVolumeNumber;
-    private final String defaultVolumeName;
-    private final String defaultCode;
+    private final ProjectFileService projectFileService;
+
 
     public ProjectService(ProjectRepository projectRepository,
                           DocumentService documentService,
@@ -44,187 +40,145 @@ public class ProjectService {
                           CompanyService companyService,
                           StageService stageService,
                           EmailService emailService,
-                          @Value("${bpm.project.filename.format}") String pdfFileNameTemplate,
-                          @Value("${bpm.project.default.name}") String defaultProjectName,
-                          @Value("${bpm.project.default.objName}") String defaultObjName,
-                          @Value("${bpm.project.default.objAddress}") String defaultObjAddress,
-                          @Value("${bpm.project.default.volumeNumber}") Long defaultVolumeNumber,
-                          @Value("${bpm.project.default.volumeName}") String defaultVolumeName,
-                          @Value("${bpm.project.default.code}") String defaultCode) {
+                          ProjectFileService projectFileService) {
         this.projectRepository = projectRepository;
         this.documentService = documentService;
         this.userService = userService;
         this.companyService = companyService;
         this.stageService = stageService;
         this.emailService = emailService;
-        this.pdfFileNameTemplate = pdfFileNameTemplate;
-        this.defaultProjectName = defaultProjectName;
-        this.defaultObjName = defaultObjName;
-        this.defaultObjAddress = defaultObjAddress;
-        this.defaultVolumeNumber = defaultVolumeNumber;
-        this.defaultVolumeName = defaultVolumeName;
-        this.defaultCode = defaultCode;
+        this.projectFileService = projectFileService;
     }
 
-    public CustomPage<ProjectDto> getAllPaginated(Pageable pageable) {
-        CustomPage<ProjectEntity> pageOfProjectEntities = projectRepository.fetchAllPaginated(pageable);
-        return new CustomPage<>(toDtoList(pageOfProjectEntities.getContent()), pageable, pageOfProjectEntities.getTotal());
+    @Transactional(readOnly = true)
+    public Page<ProjectEntity> getAllNotDeletedPaginated(Pageable pageable) {
+        return projectRepository.findAllByDeletedOrderByEditTimeDesc(false, pageable);
     }
 
-    public ProjectDto getDtoById(Long projectId) {
-        return new ProjectDto(getById(projectId));
-    }
-
+    @Transactional(readOnly = true)
     public ProjectEntity getById(Long projectId) {
-        return projectRepository.fetchByIdWrapped(projectId);
+        return projectRepository.findById(projectId).orElseThrow(() -> {
+            throw new NotFoundCustomApplicationException(String.format("Project with ID %d not found", projectId));
+        });
     }
 
-    public ProjectDto prepareNewProjectDto() {
-        return new ProjectDto(getEmpty());
-    }
-
-    public ProjectDto create(ProjectDto projectForSave) {
-        String codeForSave = null;
-        if (!Objects.equals(projectForSave.getCode(), "")) {
-            codeForSave = projectForSave.getCode();
+    @Transactional
+    public ProjectEntity create(ProjectEntity projectForCreate) {
+        if (isCodeDuplicated(projectForCreate.getCode())) {
+            throw new EditProjectException(String.format("Can't create project. Project with code = %s is already exists", projectForCreate.getCode()));
         }
-        ProjectEntity projectForCreationEntity = ProjectEntity.builder()
-                .name(projectForSave.getName())
-                .objectName(projectForSave.getObjectName())
-                .objectAddress(projectForSave.getObjectAddress())
-                .releaseDate(projectForSave.getReleaseDate())
-                .volumeNumber(projectForSave.getVolumeNumber())
-                .volumeName(projectForSave.getVolumeName())
-                .code(codeForSave)
-                .designer(userService.getById(projectForSave.getDesignerId()))
-                .supervisor(userService.getById(projectForSave.getSupervisorId()))
-                .chief(userService.getById(projectForSave.getChiefId()))
-                .controller(userService.getById(projectForSave.getControllerId()))
-                .company(companyService.getEntityById(projectForSave.getCompanyId()))
-                .stage(stageService.getEntityById(projectForSave.getStageId()))
-                .editTime(LocalDateTime.now())
-                .reassemblyRequired(true)
-                .build();
-        ProjectEntity createdProject = projectRepository.createTransactional(projectForCreationEntity);
-        documentService.createCoverPage(createdProject.getId());
-        documentService.createTitlePage(createdProject.getId());
-        documentService.createTableOfContents(createdProject.getId());
-        reassemble(createdProject.getId());
-        emailService.sendEmailOnProjectCreate(createdProject);
-        return new ProjectDto(getById(createdProject.getId()));
+        projectForCreate.setId(null);
+        updateBasicFieldsWithExistenceCheck(projectForCreate);
+        projectForCreate.setReassemblyRequired(true);
+        projectForCreate.setDeleted(false);
+        ProjectEntity createdProject = projectRepository.save(projectForCreate);
+        documentService.createDefaultDocument(createdProject, COVER_PAGE);
+        documentService.createDefaultDocument(createdProject, TITLE_PAGE);
+        documentService.createDefaultDocument(createdProject, TABLE_OF_CONTENTS);
+        ProjectEntity reassembledProject = reassemble(createdProject);
+        emailService.sendEmailOnProjectCreate(reassembledProject);
+        return reassembledProject;
     }
 
-    public ProjectDto update(ProjectDto projectForUpdate) {
-        ProjectEntity projectEntityForUpdate = getById(projectForUpdate.getId());
-        projectEntityForUpdate.setName(Optional.ofNullable(projectForUpdate.getName())
-                .orElse(projectEntityForUpdate.getName()));
-        projectEntityForUpdate.setObjectName(Optional.ofNullable(projectForUpdate.getObjectName())
-                .orElse(projectEntityForUpdate.getObjectName()));
-        projectEntityForUpdate.setObjectAddress(Optional.ofNullable(projectForUpdate.getObjectAddress())
-                .orElse(projectEntityForUpdate.getObjectAddress()));
-        projectEntityForUpdate.setReleaseDate(Optional.ofNullable(projectForUpdate.getReleaseDate())
-                .orElse(projectEntityForUpdate.getReleaseDate()));
-        projectEntityForUpdate.setVolumeNumber(Optional.ofNullable(projectForUpdate.getVolumeNumber())
-                .orElse(projectEntityForUpdate.getVolumeNumber()));
-        projectEntityForUpdate.setVolumeName(Optional.ofNullable(projectForUpdate.getVolumeName())
-                .orElse(projectEntityForUpdate.getVolumeName()));
-        projectEntityForUpdate.setCode(Optional.ofNullable(projectForUpdate.getCode())
-                .orElse(projectEntityForUpdate.getCode()));
-        projectEntityForUpdate.setDesigner(Optional.ofNullable(projectForUpdate.getDesignerId())
-                .map(userService::getById)
-                .orElse(projectEntityForUpdate.getDesigner()));
-        projectEntityForUpdate.setSupervisor(Optional.ofNullable(projectForUpdate.getSupervisorId())
-                .map(userService::getById)
-                .orElse(projectEntityForUpdate.getSupervisor()));
-        projectEntityForUpdate.setChief(Optional.ofNullable(projectForUpdate.getChiefId())
-                .map(userService::getById)
-                .orElse(projectEntityForUpdate.getChief()));
-        projectEntityForUpdate.setController(Optional.ofNullable(projectForUpdate.getControllerId())
-                .map(userService::getById)
-                .orElse(projectEntityForUpdate.getController()));
-        projectEntityForUpdate.setStage(Optional.ofNullable(projectForUpdate.getStageId())
-                .map(stageService::getEntityById)
-                .orElse(projectEntityForUpdate.getStage()));
-        projectEntityForUpdate.setReassemblyRequired(true);
-        projectEntityForUpdate.setEditTime(LocalDateTime.now());
-        ProjectEntity updatedProject = projectRepository
-                .updateTransactional(projectEntityForUpdate);
+    @Transactional
+    public DocumentEntity addNewEditableDocument(DocumentEntity document, MultipartFile file) {
+        document.setProject(getById(document.getProject().getId()));
+        document.setDocumentFile(new FileEntity());
+        return documentService.createEditableDocumentForSave(document, file);
+    }
+
+    private void updateBasicFieldsWithExistenceCheck(ProjectEntity project) {
+        project.setSupervisor(Optional.ofNullable(project.getSupervisor())
+                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
+                .orElse(null));
+        project.setDesigner(Optional.ofNullable(project.getDesigner())
+                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
+                .orElse(null));
+        project.setController(Optional.ofNullable(project.getController())
+                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
+                .orElse(null));
+        project.setChief(Optional.ofNullable(project.getChief())
+                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
+                .orElse(null));
+        project.setCompany(Optional.ofNullable(project.getCompany())
+                .map(c -> companyService.getById(c.getId()))
+                .orElse(null));
+        project.setStage(Optional.ofNullable(project.getStage())
+                .map(s -> stageService.getById(s.getId()))
+                .orElse(null));
+    }
+
+    private Boolean isCodeDuplicated(String code) {
+        return projectRepository.existsByCode(code);
+    }
+
+    @Transactional
+    public ProjectEntity update(ProjectEntity projectForUpdate) {
+        ProjectEntity currentProject = getById(projectForUpdate.getId());
+        if (!currentProject.getCode().equals(projectForUpdate.getCode())) {
+            if (isCodeDuplicated(projectForUpdate.getCode())) {
+                throw new EditProjectException(String.format("Can't edit project. Project with code = %s is already exists", projectForUpdate.getCode()));
+            }
+        }
+        updateBasicFieldsWithExistenceCheck(projectForUpdate);
+        currentProject.setName(projectForUpdate.getName());
+        currentProject.setObjectName(projectForUpdate.getObjectName());
+        currentProject.setObjectAddress(projectForUpdate.getObjectAddress());
+        currentProject.setReleaseDate(projectForUpdate.getReleaseDate());
+        currentProject.setVolumeName(projectForUpdate.getVolumeName());
+        currentProject.setVolumeName(projectForUpdate.getVolumeName());
+        currentProject.setCode(projectForUpdate.getCode());
+        currentProject.setDesigner(projectForUpdate.getDesigner());
+        currentProject.setSupervisor(projectForUpdate.getSupervisor());
+        currentProject.setChief(projectForUpdate.getChief());
+        currentProject.setController(projectForUpdate.getController());
+        currentProject.setCompany(projectForUpdate.getCompany());
+        currentProject.setStage(projectForUpdate.getStage());
+        currentProject.setReassemblyRequired(true);
+        ProjectEntity updatedProject = projectRepository.saveAndFlush(currentProject);
         emailService.sendEmailOnProjectEdit(updatedProject);
-        return new ProjectDto(updatedProject);
+        return updatedProject;
     }
 
-    public void reassembleForController(Long projectId) {
-        emailService.sendEmailOnProjectReassembly(projectRepository.fetchByIdWrapped(projectId));
-        reassemble(projectId);
+    @Transactional
+    public ProjectEntity reassembleForController(Long projectId) {
+        ProjectEntity projectForReassembly = getById(projectId);
+        ProjectEntity reassembledProject = reassemble(projectForReassembly);
+        emailService.sendEmailOnProjectReassembly(reassembledProject);
+        return reassembledProject;
     }
 
+    @Transactional
     public Integer reassembleAll() {
-        Set<ProjectEntity> projectsForReassembly = projectRepository.fetchAllWithReassemblyRequired();
-        projectsForReassembly.forEach(prj -> reassemble(prj.getId()));
+        Set<ProjectEntity> projectsForReassembly = projectRepository.findAllByReassemblyRequiredAndDeleted(true, false);
+        projectsForReassembly.forEach(this::reassemble);
         return projectsForReassembly.size();
     }
 
-    public void getFileForDownload(Long projectId, HttpServletResponse response) {
-        ProjectEntity project = projectRepository.fetchByIdWrapped(projectId);
-        byte[] documentInPdf = projectRepository.fetchProjectInPdfByProjectId(projectId);
-        String projectFileName = pdfFileNameTemplate.formatted(project.getCode(), project.getVolumeNumber(), project.getVolumeName());
-        getFile(response, documentInPdf, projectFileName);
+    @Transactional
+    public void setDeleted(Long projectId, Boolean deleted) {
+        ProjectEntity projectForDelete = getById(projectId);
+        projectForDelete.setDeleted(deleted);
+        projectRepository.save(projectForDelete);
     }
 
-    public DocumentDto setDesignerAndSupervisorInDocument(DocumentDto document) {
-        ProjectDto project = getDtoById(document.getProjectId());
-        if (document.getDesignerId() == null) {
-            document.setDesignerId(project.getDesignerId());
-        }
-        if (document.getSupervisorId() == null) {
-            document.setSupervisorId(project.getSupervisorId());
-        }
-        return document;
-    }
-
-    public void deleteById(Long projectId) {
-        projectRepository.deleteProjectTransactional(projectId);
-    }
-
-    private ProjectEntity getEmpty() {
-        return ProjectEntity.builder()
-                .id(null)
-                .name(defaultProjectName)
-                .objectName(defaultObjName)
-                .objectAddress(defaultObjAddress)
-                .releaseDate(LocalDate.now())
-                .volumeNumber(defaultVolumeNumber)
-                .volumeName(defaultVolumeName)
-                .code(defaultCode)
-                .stage(StageEntity.builder().id(1L).build())
-                .reassemblyRequired(false)
-                .editTime(LocalDateTime.now()).build();
-    }
-
-    private ProjectDto reassemble(Long projectId) {
-        ProjectEntity project = projectRepository.fetchByIdWrapped(projectId);
+    private ProjectEntity reassemble(ProjectEntity project) {
         if (project.getReassemblyRequired()) {
             List<byte[]> documentsInBytes = new ArrayList<>();
-            List<DocumentDto> documents = documentService.getAllByProjectId(projectId);
+            List<DocumentEntity> documents = documentService.getAllByProjectId(project.getId());
             documents.forEach(doc -> {
-                documentService.reassembleDocument(doc.getId());
-                documentsInBytes.add(documentService.getInPdfById(doc.getId()));
+                documentsInBytes.add(documentService.reassembleDocument(doc).getDocumentFile().getFileInBytes());
             });
             if (documentsInBytes.size() >= 1) {
                 byte[] mergedDocument = documentsInBytes.get(0);
                 for (int i = 1; i < documentsInBytes.size(); i++) {
                     mergedDocument = PdfDocumentGenerator.mergePdf(mergedDocument, documentsInBytes.get(i));
                 }
-                project = projectRepository.updateProjectInPdfTransactional(projectId, mergedDocument);
-            } else project = projectRepository.updateProjectInPdfTransactional(projectId, null);
+                projectFileService.save(mergedDocument, project);
+                project.setReassemblyRequired(false);
+                return projectRepository.saveAndFlush(project);
+            }
         }
-        return new ProjectDto(project);
-    }
-
-    private List<ProjectDto> toDtoList(List<ProjectEntity> entityList) {
-        return entityList.stream().
-                filter(Objects::nonNull).
-                map(ProjectDto::new).
-                collect(Collectors.toList());
+        return project;
     }
 }

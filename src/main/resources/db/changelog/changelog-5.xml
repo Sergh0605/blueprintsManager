@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+    <changeSet id="DB_add_table_for_bytea" author="S.Puzakov">
+        <createTable tableName="bpm_file">
+            <column autoIncrement="true" name="id" type="bigint">
+                <constraints primaryKey="true" primaryKeyName="pk_file"/>
+            </column>
+            <column name="content" type="bytea">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="DB_add_table_for_projectHistory" author="S.Puzakov">
+        <createTable tableName="bpm_project_history">
+            <column autoIncrement="true" name="id" type="bigint">
+                <constraints primaryKey="true" primaryKeyName="pk_history"/>
+            </column>
+            <column name="project_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content" type="bytea">
+                <constraints nullable="false"/>
+            </column>
+            <column name="creation_time" type="timestamptz">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="bpm_project_history"
+                                 baseColumnNames="project_id"
+                                 constraintName="fk_history_project"
+                                 referencedTableName="bpm_project"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+
+    <changeSet id="DB_add_contentInPdfId_to_document" author="S.Puzakov">
+        <addColumn tableName="bpm_document">
+            <column name="content_in_pdf_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="bpm_document"
+                                 baseColumnNames="content_in_pdf_id"
+                                 constraintName="fk_document_content"
+                                 referencedTableName="bpm_file"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DB_add_documentInPdfId_to_document" author="S.Puzakov">
+        <addColumn tableName="bpm_document">
+            <column name="document_in_pdf_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="bpm_document"
+                                 baseColumnNames="document_in_pdf_id"
+                                 constraintName="fk_document_docInPdf"
+                                 referencedTableName="bpm_file"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DB_add_logoFileId_to_company" author="S.Puzakov">
+        <addColumn tableName="bpm_company">
+            <column name="logo_file_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="bpm_company"
+                                 baseColumnNames="logo_file_id"
+                                 constraintName="fk_company_logo"
+                                 referencedTableName="bpm_file"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DB_add_signFileId_to_user" author="S.Puzakov">
+        <addColumn tableName="bpm_user">
+            <column name="sign_file_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="bpm_user"
+                                 baseColumnNames="sign_file_id"
+                                 constraintName="fk_user_sign"
+                                 referencedTableName="bpm_file"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DB_add_firstPageTemplateId_to_DocType" author="S.Puzakov">
+        <addColumn tableName="bpm_document_type">
+            <column name="first_page_template_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="bpm_document_type"
+                                 baseColumnNames="first_page_template_id"
+                                 constraintName="fk_docType_firstPage"
+                                 referencedTableName="bpm_file"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DB_add_genPageTemplateId_to_DocType" author="S.Puzakov">
+        <addColumn tableName="bpm_document_type">
+            <column name="general_page_template_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="bpm_document_type"
+                                 baseColumnNames="general_page_template_id"
+                                 constraintName="fk_docType_genPage"
+                                 referencedTableName="bpm_file"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DB_add_docTypes_Templates_to_Files" author="S.Puzakov">
+        <comment>Add Templates to File Table and connect them to DocTypes</comment>
+        <sqlFile path="sql_scripts/correct-doc_types-templates-for-fileTable.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="DB_fix_sequence_in_Files" author="S.Puzakov">
+        <comment>Fix sequence in file table</comment>
+        <sqlFile path="sql_scripts/correct-sequence-for-fileTable.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="DB_add_columns_to_docType" author="S.Puzakov">
+        <addColumn tableName="bpm_document_type">
+            <column name="unmodified" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="bpm_document_type">
+            <column name="default_page_number" type="int" defaultValue="1">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="DB_update_docType" author="S.Puzakov">
+        <comment>Update unmodified state and default page number</comment>
+        <sqlFile path="sql_scripts/update-doc_types.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="DB_removeNotNullConstraint_in_Document" author="S.Puzakov">
+        <dropNotNullConstraint tableName="bpm_document"
+                               columnName="content_in_pdf"/>
+    </changeSet>
+
+    <changeSet id="DB_move_projectPDF_to_File_Table" author="S.Puzakov">
+        <dropColumn tableName="bpm_project_history"
+                    columnName="content"/>
+        <addColumn tableName="bpm_project_history">
+            <column name="project_in_pdf_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="DB_move_doc_content" author="S.Puzakov">
+        <comment>Move doc content to file table. Drop pdf columns in docs and projects. Set reassembly required - true in all docs and projects.</comment>
+        <sqlFile path="sql_scripts/move_content_in_docs_to_files_table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="DB_move_users_signature" author="S.Puzakov">
+        <comment>Move user signature to file table. Drop signature columns in user table.</comment>
+        <sqlFile path="sql_scripts/move_users_signatures_to_files_table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="DB_move_companies_logo" author="S.Puzakov">
+        <comment>Move companies logo to file table. Drop logo columns in companies table.</comment>
+        <sqlFile path="sql_scripts/move_companies_logo_to_files_table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="DB_init_doc_file" author="S.Puzakov">
+        <comment>Init doc file record in File table</comment>
+        <sqlFile path="sql_scripts/insert_docInPdf_in_files_table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+</databaseChangeLog>
+
+
+

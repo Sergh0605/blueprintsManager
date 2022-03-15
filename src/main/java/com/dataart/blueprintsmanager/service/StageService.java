@@ -1,15 +1,14 @@
 package com.dataart.blueprintsmanager.service;
 
-import com.dataart.blueprintsmanager.dto.StageDto;
+import com.dataart.blueprintsmanager.exceptions.NotFoundCustomApplicationException;
 import com.dataart.blueprintsmanager.persistence.entity.StageEntity;
 import com.dataart.blueprintsmanager.persistence.repository.StageRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -17,19 +16,15 @@ import java.util.stream.Collectors;
 public class StageService {
     private final StageRepository stageRepository;
 
-    public List<StageDto> getAll() {
-        List<StageEntity> stageEntities = stageRepository.fetchAll();
-        return toDtoListConverter(stageEntities);
+    @Transactional(readOnly = true)
+    public List<StageEntity> getAll() {
+        return stageRepository.findAll();
     }
 
-    public StageEntity getEntityById(Long typeId) {
-        return stageRepository.fetchById(typeId);
-    }
-
-    private List<StageDto> toDtoListConverter(List<StageEntity> stageEntities) {
-        return stageEntities.stream().
-                filter(Objects::nonNull).
-                map(StageDto::new).
-                collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public StageEntity getById(Long stageId) {
+        return stageRepository.findById(stageId).orElseThrow(() -> {
+            throw new NotFoundCustomApplicationException(String.format("Stage with ID %d not found", stageId));
+        });
     }
 }

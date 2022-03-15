@@ -1,16 +1,18 @@
 package com.dataart.blueprintsmanager.service;
 
-import com.dataart.blueprintsmanager.dto.UserDto;
+import com.dataart.blueprintsmanager.exceptions.NotFoundCustomApplicationException;
 import com.dataart.blueprintsmanager.persistence.entity.UserEntity;
 import com.dataart.blueprintsmanager.persistence.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -18,31 +20,44 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
 
-    public List<UserDto> getAll() {
-        List<UserEntity> userEntities = userRepository.fetchAll();
-        return toDtoListConverter(userEntities);
+    @Transactional(readOnly = true)
+    public Page<UserEntity> getAllByPage(Pageable pageable) {
+        return userRepository.findAllByDeletedOrderByCompany(false, pageable);
     }
 
+    @Transactional(readOnly = true)
     public UserEntity getById(Long userId) {
-        return userRepository.fetchById(userId);
+        return userRepository.findById(userId).orElseThrow(() -> {
+            throw new NotFoundCustomApplicationException(String.format("User with ID = %d not found", userId));
+        });
     }
 
-    public List<UserDto> getAllByCompanyId(Long companyId) {
+    @Transactional(readOnly = true)
+    public UserEntity getByIdAndCompanyId(Long userId, Long companyId) {
+        return userRepository.findByIdAndCompanyId(userId, companyId).orElseThrow(() -> {
+            throw new NotFoundCustomApplicationException(String.format("User with ID = %d not found for Company with ID = %d", userId, companyId));
+        });
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserEntity> getAllByCompanyId(@NotNull Long companyId) {
         List<UserEntity> userEntities = new ArrayList<>();
-        if (companyId != null) {
-            userEntities = userRepository.fetchAllByCompanyId(companyId);
-        }
-        return toDtoListConverter(userEntities);
+        // TODO: 04.03.2022 Do we need null check here?
+            userEntities = userRepository.findAllByCompanyIdOrderByLastName(companyId);
+        return userEntities;
     }
 
+    @Transactional(readOnly = true)
     public UserEntity getByLogin(String login) {
-        return userRepository.fetchByLogin(login);
+        return userRepository.findByLogin(login).orElseThrow(() -> {
+            throw new NotFoundCustomApplicationException(String.format("User with login %s not found", login));
+        });
     }
 
-    private List<UserDto> toDtoListConverter(List<UserEntity> userEntities) {
-        return userEntities.stream().
-                filter(Objects::nonNull).
-                map(UserDto::new).
-                collect(Collectors.toList());
+    @Transactional
+    public UserEntity setDeletedById(Long id, Boolean deletedStatus) {
+        UserEntity userForChangeDeleteStatus = getById(id);
+        userForChangeDeleteStatus.setDeleted(deletedStatus);
+        return userRepository.save(userForChangeDeleteStatus);
     }
 }

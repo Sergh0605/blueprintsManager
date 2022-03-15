@@ -1,0 +1,1 @@
+SELECT setval(pg_get_serial_sequence('bpm_file', 'id'), coalesce(max(id), 0)+1 , false) FROM bpm_file;

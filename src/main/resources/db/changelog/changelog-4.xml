@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+    <changeSet id="DB_add_type_in_docType" author="S.Puzakov">
+        <addColumn tableName="bpm_document_type">
+            <column name="type" type="varchar(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="DB_update_typeValue_in_CoverPageDocType" author="S.Puzakov">
+        <update tableName="bpm_document_type">
+            <column name="type" value="COVER_PAGE"/>
+            <where>id='1'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="DB_update_typeValue_in_TitlePageDocType" author="S.Puzakov">
+        <update tableName="bpm_document_type">
+            <column name="type" value="TITLE_PAGE"/>
+            <where>id='2'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="DB_update_typeValue_in_ContentsDocType" author="S.Puzakov">
+        <update tableName="bpm_document_type">
+            <column name="type" value="TABLE_OF_CONTENTS"/>
+            <where>id='3'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="DB_update_typeValue_in_GeneralInfoDocType" author="S.Puzakov">
+        <update tableName="bpm_document_type">
+            <column name="type" value="GENERAL_INFORMATION"/>
+            <where>id='4'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="DB_update_typeValue_in_DrawingDocType" author="S.Puzakov">
+        <update tableName="bpm_document_type">
+            <column name="type" value="DRAWING"/>
+            <where>id='5'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="DB_addNotNullConstraint_in_DocType" author="S.Puzakov">
+        <addNotNullConstraint tableName="bpm_document_type"
+                              columnName="type"/>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,33 +1,27 @@
 package com.dataart.blueprintsmanager.service;
 
-import com.dataart.blueprintsmanager.dto.DocumentDto;
 import com.dataart.blueprintsmanager.email.EmailService;
-import com.dataart.blueprintsmanager.exceptions.EditDocumentException;
-import com.dataart.blueprintsmanager.pdf.CompanyDataForPdf;
-import com.dataart.blueprintsmanager.pdf.DocumentDataForPdf;
+import com.dataart.blueprintsmanager.exceptions.InvalidInputDataException;
+import com.dataart.blueprintsmanager.exceptions.NotFoundCustomApplicationException;
 import com.dataart.blueprintsmanager.pdf.PdfDocumentGenerator;
 import com.dataart.blueprintsmanager.pdf.RowOfContentsDocument;
-import com.dataart.blueprintsmanager.persistence.entity.DocumentEntity;
-import com.dataart.blueprintsmanager.persistence.entity.DocumentType;
-import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
-import com.dataart.blueprintsmanager.persistence.entity.UserEntity;
+import com.dataart.blueprintsmanager.persistence.entity.*;
 import com.dataart.blueprintsmanager.persistence.repository.DocumentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import static com.dataart.blueprintsmanager.util.ApplicationUtil.getFile;
+import static com.dataart.blueprintsmanager.pdf.DocumentDataForPdf.getDocumentDataForPdf;
+import static com.dataart.blueprintsmanager.persistence.entity.DocumentType.*;
+import static com.dataart.blueprintsmanager.util.ResponseUtil.getFile;
 
 @Service
 @Slf4j
@@ -36,258 +30,205 @@ public class DocumentService {
     private final DocumentTypeService documentTypeService;
     private final UserService userService;
     private final String pathForPdfFont;
-    private static final DateTimeFormatter releaseDateFormat = DateTimeFormatter.ofPattern("MM.yy");
-    private static final DateTimeFormatter releaseDateForCoverFormat = DateTimeFormatter.ofPattern("yyyy");
     private final EmailService emailService;
     private final String pdfFileNameTemplate;
-    private final String defaultDocumentName;
-    private final String defaultDocumentCode;
+    private final String fullDocumentCodeTemplate;
 
-    public DocumentService(DocumentRepository documentRepository, DocumentTypeService documentTypeService,
+    public DocumentService(DocumentRepository documentRepository,
+                           DocumentTypeService documentTypeService,
                            UserService userService,
                            @Value("${bpm.pdf.fontfilepath}") String pathForPdfFont,
                            EmailService emailService,
                            @Value("${bpm.document.filename.format}") String pdfFileNameTemplate,
-                           @Value("${bpm.document.default.name}") String defaultDocumentName,
-                           @Value("${bpm.document.default.code}") String defaultDocumentCode) {
+                           @Value("${bpm.project.fullDocumentCode.format}") String fullDocumentCodeTemplate) {
         this.documentRepository = documentRepository;
         this.documentTypeService = documentTypeService;
         this.userService = userService;
         this.pathForPdfFont = pathForPdfFont;
         this.emailService = emailService;
         this.pdfFileNameTemplate = pdfFileNameTemplate;
-        this.defaultDocumentName = defaultDocumentName;
-        this.defaultDocumentCode = defaultDocumentCode;
+        this.fullDocumentCodeTemplate = fullDocumentCodeTemplate;
     }
 
-
-    public void createCoverPage(Long projectId) {
-        DocumentDto document = DocumentDto.builder()
-                .projectId(projectId)
-                .code("О")
-                .numberInProject(1)
-                .type(DocumentType.COVER_PAGE)
-                .name("Обложка")
+    @Transactional
+    public void createDefaultDocument(ProjectEntity project, DocumentType type) {
+        DocumentTypeEntity documentType = documentTypeService.getByType(type);
+        DocumentEntity defaultDocument = DocumentEntity.builder()
+                .project(project)
+                .code(documentType.getCode())
+                .numberInProject(documentType.getDefaultPageNumber())
+                .documentType(documentType)
+                .name(documentType.getName())
                 .reassemblyRequired(true)
-                .editTime(LocalDateTime.now())
+                .deleted(false)
+                .contentFile(new FileEntity(documentType.getFirstPageFile().getFileInBytes()))
+                .documentFile(new FileEntity())
                 .build();
-        byte[] coverPageTemplate = documentTypeService.getFirstPageTemplateByTypeId(document.getType().getId());
-        reassembleDocument(save(document, coverPageTemplate).getId());
+        DocumentEntity savedDocument = documentRepository.save(defaultDocument);
+        reassembleDocument(savedDocument);
     }
 
-    public void createTitlePage(Long projectId) {
-        DocumentDto document = DocumentDto.builder()
-                .projectId(projectId)
-                .code("ТЛ")
-                .numberInProject(2)
-                .type(DocumentType.TITLE_PAGE)
-                .name("Титульный лист")
-                .reassemblyRequired(true)
-                .editTime(LocalDateTime.now())
-                .build();
-        byte[] titleListTemplate = documentTypeService.getFirstPageTemplateByTypeId(document.getType().getId());
-        reassembleDocument(save(document, titleListTemplate).getId());
-    }
-
-    public void createTableOfContents(Long projectId) {
-        DocumentDto document = DocumentDto.builder()
-                .projectId(projectId)
-                .code("СТ")
-                .numberInProject(3)
-                .type(DocumentType.TABLE_OF_CONTENTS)
-                .name("Состав тома")
-                .reassemblyRequired(true)
-                .editTime(LocalDateTime.now())
-                .build();
-        byte[] titleListTemplate = documentTypeService.getFirstPageTemplateByTypeId(document.getType().getId());
-        reassembleDocument(save(document, titleListTemplate).getId());
-    }
-
-    public DocumentDto createEditableDocumentForSave(DocumentDto document, MultipartFile file) {
-        DocumentType currentDocType = document.getType();
-        if (currentDocType == null) {
-            throw new EditDocumentException("Can't create document. Wrong document type or file type");
+    @Transactional
+    public DocumentEntity createEditableDocumentForSave(DocumentEntity document, MultipartFile file) {
+        document.setId(null);
+        document.setReassemblyRequired(true);
+        document.setDeleted(false);
+        // TODO: 13.03.2022 could provide same number for different users - ping me to discuss
+        document.setNumberInProject(getMaxDocumentNumberInProject(document.getProject().getId()) + 1);
+        updateBasicFieldsWithExistenceCheck(document);
+        DocumentType currentDocType = document.getDocumentType().getType();
+        if (GENERAL_INFORMATION.equals(currentDocType)) {
+            DocumentEntity createdDocument = createGeneralInfo(document, file);
+            emailService.sendEmailOnDocumentCreate(createdDocument);
+            return createdDocument;
         }
-        document.setEditTime(LocalDateTime.now());
-        if (file.isEmpty()) {
-            if (DocumentType.GENERAL_INFORMATION.equals(currentDocType)) {
-                DocumentDto createdDocumentDto = createGeneralInfo(document, null);
-                emailService.sendEmailOnDocumentCreate(documentRepository.fetchById(createdDocumentDto.getId()));
-                return createdDocumentDto;
-            }
-            if (DocumentType.DRAWING.equals(currentDocType)) {
-                DocumentDto createdDocumentDto = createDrawing(document, null);
-                emailService.sendEmailOnDocumentCreate(documentRepository.fetchById(createdDocumentDto.getId()));
-                return createdDocumentDto;
-            }
+        if (DRAWING.equals(currentDocType)) {
+            DocumentEntity createdDocument = createDrawing(document, file);
+            emailService.sendEmailOnDocumentCreate(createdDocument);
+            return createdDocument;
         }
-        try {
-            byte[] uploadedFileInBytes = file.getBytes();
-            String contentType = file.getContentType();
-            if (contentType != null) {
-                if (DocumentType.GENERAL_INFORMATION.equals(currentDocType) && contentType.contains("text")) {
-                    DocumentDto createdDocumentDto = createGeneralInfo(document, uploadedFileInBytes);
-                    emailService.sendEmailOnDocumentCreate(documentRepository.fetchById(createdDocumentDto.getId()));
-                    return createdDocumentDto;
-                }
-                if (DocumentType.DRAWING.equals(currentDocType) && contentType.contains("pdf")) {
-                    DocumentDto createdDocumentDto = createDrawing(document, uploadedFileInBytes);
-                    emailService.sendEmailOnDocumentCreate(documentRepository.fetchById(createdDocumentDto.getId()));
-                    return createdDocumentDto;
-                }
-            }
-            throw new EditDocumentException("Can't create document. Wrong document type or file type");
-        } catch (IOException e) {
-            log.debug(e.getMessage(), e);
-            throw new EditDocumentException("Can't create document, broken file ", e);
-        }
+        throw new InvalidInputDataException("Can't create document. Wrong document type.");
     }
 
-    public DocumentDto reassembleDocument(Long documentId) {
-        DocumentEntity document = documentRepository.fetchById(documentId);
-        if (document.getReassemblyRequired() && document.getDocumentType() != null) {
-            return switch (document.getDocumentType()) {
-                case COVER_PAGE -> new DocumentDto(reassembleCoverPage(document));
-                case TITLE_PAGE -> new DocumentDto(reassembleTitlePage(document));
-                case TABLE_OF_CONTENTS -> new DocumentDto(reassembleTableOfContents(document));
-                case GENERAL_INFORMATION -> new DocumentDto(reassembleGeneralInformation(document));
-                case DRAWING -> new DocumentDto(reassembleDrawing(document));
+    @Transactional
+    public DocumentEntity reassembleDocument(DocumentEntity document) {
+        if (document.getReassemblyRequired()) {
+            return switch (document.getDocumentType().getType()) {
+                case COVER_PAGE -> reassembleCoverPage(document);
+                case TITLE_PAGE -> reassembleTitlePage(document);
+                case TABLE_OF_CONTENTS -> reassembleTableOfContents(document);
+                case GENERAL_INFORMATION -> reassembleGeneralInformation(document);
+                case DRAWING -> reassembleDrawing(document);
             };
+        } else {
+            return document;
         }
-        return getById(documentId);
     }
 
-    public List<DocumentDto> getAllByProjectId(Long projectId) {
+    @Transactional(readOnly = true)
+    public List<DocumentEntity> getAllByProjectId(Long projectId) {
         List<DocumentEntity> documents = new ArrayList<>();
         if (projectId != null) {
-            documents = documentRepository.fetchAllByProjectId(projectId);
+            documents = documentRepository.findByProjectIdOrderByNumberInProject(projectId);
         }
-        return documents.stream().
-                filter(Objects::nonNull).
-                map(d -> {
-                    DocumentDto documentDto = new DocumentDto(d);
-                    documentDto.setDocumentFullCode(getFullCode(d));
-                    return documentDto;
-                }).
-                collect(Collectors.toList());
+        return documents;
     }
 
-    public DocumentDto getById(Long documentId) {
-        DocumentEntity documentEntity = documentRepository.fetchById(documentId);
-        DocumentDto documentDto = new DocumentDto(documentEntity);
-        documentDto.setDocumentFullCode(getFullCode(documentEntity));
-        return documentDto;
+    @Transactional(readOnly = true)
+    public DocumentEntity getById(Long documentId) {
+        return documentRepository.findById(documentId).orElseThrow(() -> {
+            throw new NotFoundCustomApplicationException(String.format("Document with ID %d not found", documentId));
+        });
     }
 
-    public void getFileForDownload(Long documentId, HttpServletResponse response) {
-        DocumentEntity document = documentRepository.fetchById(documentId);
-        byte[] documentInPdf = documentRepository.fetchDocumentInPdfByDocumentId(documentId);
+    @Transactional(readOnly = true)
+    public DocumentEntity getByIdAndProjectId(Long documentId, Long projectId) {
+        return documentRepository.findByIdAndProjectId(documentId, projectId).orElseThrow(() -> {
+            throw new NotFoundCustomApplicationException(String.format("Document with ID = %d not found for Project with ID = %d", documentId, projectId));
+        });
+    }
+
+    @Transactional(readOnly = true)
+    public void getFileForDownload(Long documentId, Long projectId, HttpServletResponse response) {
+        DocumentEntity document = getByIdAndProjectId(documentId, projectId);
+        byte[] documentInPdf = document.getDocumentFile().getFileInBytes();
         String documentFileName = String.format(pdfFileNameTemplate, getFullCode(document), document.getName());
         getFile(response, documentInPdf, documentFileName);
     }
 
-    public byte[] getInPdfById(Long id) {
-        return documentRepository.fetchDocumentInPdfByDocumentId(id);
-    }
-
-    public DocumentDto getNew(Long projectId) {
-        DocumentDto newDocument = new DocumentDto(getEmpty());
-        newDocument.setProjectId(projectId);
-        newDocument.setType(null);
-        return newDocument;
-    }
-
-    public DocumentDto update(DocumentDto documentForUpdate, MultipartFile file) {
-        DocumentEntity updatableDocument = documentRepository.fetchById(documentForUpdate.getId());
-        DocumentType currentDocType = updatableDocument.getDocumentType();
-        documentForUpdate.setEditTime(LocalDateTime.now());
-        if (file == null || file.isEmpty()) {
-            if (DocumentType.GENERAL_INFORMATION.equals(currentDocType) || DocumentType.DRAWING.equals(currentDocType)) {
-                DocumentDto updatedDocument = getUpdatedDocument(documentForUpdate, updatableDocument, null);
-                emailService.sendEmailOnDocumentEdit(documentRepository.fetchById(updatedDocument.getId()));
+    @Transactional
+    public DocumentEntity update(DocumentEntity documentForUpdate, MultipartFile file) {
+        updateBasicFieldsWithExistenceCheck(documentForUpdate);
+        DocumentEntity updatableDocument = getByIdAndProjectId(documentForUpdate.getId(), documentForUpdate.getProject().getId());
+        DocumentType currentDocType = updatableDocument.getDocumentType().getType();
+        if (file.isEmpty()) {
+            if (GENERAL_INFORMATION.equals(currentDocType) || DRAWING.equals(currentDocType)) {
+                DocumentEntity updatedDocument = getUpdatedDocument(documentForUpdate, updatableDocument, null);
+                emailService.sendEmailOnDocumentEdit(updatedDocument);
                 return updatedDocument;
             }
-        }
-        try {
-            byte[] uploadedFileInBytes = file.getInputStream().readAllBytes();
-            String contentType = file.getContentType();
-            if (contentType != null) {
-                if (DocumentType.GENERAL_INFORMATION.equals(currentDocType) && contentType.contains("text")) {
-                    byte[] textDocumentContentInPdf = new PdfDocumentGenerator(documentTypeService.getFirstPageTemplateByTypeId(currentDocType.getId()), pathForPdfFont)
-                            .getFilledTextDocument(uploadedFileInBytes, documentTypeService.getGeneralPageTemplateByTypeId(currentDocType.getId()))
-                            .getPdfDocumentInBytes();
-                    DocumentDto updatedDocument = getUpdatedDocument(documentForUpdate, updatableDocument, textDocumentContentInPdf);
-                    emailService.sendEmailOnDocumentEdit(documentRepository.fetchById(updatedDocument.getId()));
-                    return updatedDocument;
+        } else {
+            try {
+                byte[] uploadedFileInBytes = file.getBytes();
+                String contentType = file.getContentType();
+                if (contentType != null) {
+                    if (GENERAL_INFORMATION.equals(currentDocType) && contentType.contains("text")) {
+                        byte[] textDocumentContentInPdf = new PdfDocumentGenerator(updatableDocument.getDocumentType().getFirstPageFile().getFileInBytes(), pathForPdfFont)
+                                .getFilledTextDocument(uploadedFileInBytes, updatableDocument.getDocumentType().getGeneralPageFile().getFileInBytes())
+                                .getPdfDocumentInBytes();
+                        DocumentEntity updatedDocument = getUpdatedDocument(documentForUpdate, updatableDocument, textDocumentContentInPdf);
+                        emailService.sendEmailOnDocumentEdit(updatedDocument);
+                        return updatedDocument;
+                    }
+                    if (DRAWING.equals(currentDocType) && contentType.contains("pdf")) {
+                        DocumentEntity updatedDocument = getUpdatedDocument(documentForUpdate, updatableDocument, uploadedFileInBytes);
+                        emailService.sendEmailOnDocumentEdit(updatedDocument);
+                        return updatedDocument;
+                    }
                 }
-                if (DocumentType.DRAWING.equals(currentDocType) && contentType.contains("pdf")) {
-                    DocumentDto updatedDocument = getUpdatedDocument(documentForUpdate, updatableDocument, uploadedFileInBytes);
-                    emailService.sendEmailOnDocumentEdit(documentRepository.fetchById(updatedDocument.getId()));
-                    return updatedDocument;
-                }
+            } catch (IOException e) {
+                log.debug(e.getMessage(), e);
+                throw new InvalidInputDataException(String.format("Can't update document with id = %d. Broken content file", documentForUpdate.getId()), e);
             }
-            throw new EditDocumentException(String.format("Can't update document with id = %d. Wrong document type or file type", documentForUpdate.getId()));
-        } catch (IOException e) {
-            log.debug(e.getMessage(), e);
-            throw new EditDocumentException(String.format("Can't update document with id = %d. Broken content file", documentForUpdate.getId()), e);
         }
+        throw new InvalidInputDataException(String.format("Can't update document with id = %d. Wrong document type or file type", documentForUpdate.getId()));
     }
 
-    private DocumentDto getUpdatedDocument(DocumentDto documentForUpdate, DocumentEntity updatableDocument, byte[] contentDocumentForUpdate) {
-        updatableDocument.setName(Optional.ofNullable(documentForUpdate.getName()).orElse(updatableDocument.getName()));
-        updatableDocument.setCode(Optional.ofNullable(documentForUpdate.getCode()).orElse(updatableDocument.getCode()));
-        updatableDocument.setDesigner(Optional.ofNullable(documentForUpdate.getDesignerId()).map(userService::getById).orElse(updatableDocument.getDesigner()));
-        updatableDocument.setSupervisor(Optional.ofNullable(documentForUpdate.getSupervisorId()).map(userService::getById).orElse(updatableDocument.getSupervisor()));
-        updatableDocument.setReassemblyRequired(true);
-        updatableDocument.setEditTime(LocalDateTime.now());
-        updatableDocument.setContentInPdf(contentDocumentForUpdate);
-        return new DocumentDto(documentRepository.updateTransactional(updatableDocument));
+    public String getFullCode(DocumentEntity document) {
+        return String.format(fullDocumentCodeTemplate,
+                document.getProject().getCode(),
+                document.getProject().getVolumeNumber(),
+                document.getCode(),
+                document.getNumberInProject(),
+                document.getProject().getStage().getCode());
     }
 
-    public Long deleteById(Long documentId) {
-        return documentRepository.deleteByIdTransactional(documentId);
-    }
-
-    private DocumentDto save(DocumentDto documentForSave, byte[] documentTemplate) {
-        DocumentEntity documentEntityForSave = DocumentEntity.builder()
-                .project(ProjectEntity.builder().id(documentForSave.getProjectId()).build())
-                .documentType(documentForSave.getType())
-                .name(documentForSave.getName())
-                .code(documentForSave.getCode())
-                .designer(Optional.ofNullable(documentForSave.getDesignerId())
-                        .map(userService::getById)
-                        .orElse(UserEntity.builder().id(null).build()))
-                .supervisor(Optional.ofNullable(documentForSave.getSupervisorId())
-                        .map(userService::getById)
-                        .orElse(UserEntity.builder().id(null).build()))
-                .reassemblyRequired(true)
-                .editTime(LocalDateTime.now())
-                .build();
-        documentEntityForSave.setContentInPdf(documentTemplate);
-        return new DocumentDto(documentRepository.createTransactional(documentEntityForSave));
+    @Transactional
+    public void setDeleted(Long projectId, Long documentId, Boolean deleted) {
+        DocumentEntity documentForDelete = getByIdAndProjectId(documentId, projectId);
+        if (!documentForDelete.getDocumentType().getUnmodified()) {
+            documentForDelete.setDeleted(deleted);
+            documentRepository.save(documentForDelete);
+        } else
+            throw new InvalidInputDataException(String.format("Can't delete or restore Document with ID = %d. There is unmodified documentType.", documentId));
     }
 
     private DocumentEntity reassembleCoverPage(DocumentEntity document) {
-        byte[] contentInPdf = documentRepository.fetchContentInPdfByDocumentId(document.getId());
+        byte[] contentInPdf = document.getContentFile().getFileInBytes();
         byte[] coverPageInPdf = new PdfDocumentGenerator(contentInPdf, pathForPdfFont)
-                .getFilledA4CoverDocument(getDocumentDataForPdf(document))
+                .getFilledA4CoverDocument(getDocumentDataForPdf(document, getFullCode(document)))
                 .getPdfDocumentInBytes();
-        return documentRepository.updateDocumentInPdfByDocumentIdTransactional(document.getId(), coverPageInPdf);
+        document.getDocumentFile().setFileInBytes(coverPageInPdf);
+        document.setReassemblyRequired(false);
+        return documentRepository.save(document);
+    }
+
+    private DocumentEntity getUpdatedDocument(DocumentEntity documentForUpdate, DocumentEntity updatableDocument, byte[] contentDocumentForUpdate) {
+        updatableDocument.setName(Optional.ofNullable(documentForUpdate.getName()).orElse(updatableDocument.getName()));
+        updatableDocument.setCode(Optional.ofNullable(documentForUpdate.getCode()).orElse(updatableDocument.getCode()));
+        updatableDocument.setDesigner(Optional.ofNullable(documentForUpdate.getDesigner()).orElse(updatableDocument.getDesigner()));
+        updatableDocument.setSupervisor(Optional.ofNullable(documentForUpdate.getSupervisor()).orElse(updatableDocument.getSupervisor()));
+        updatableDocument.setReassemblyRequired(true);
+        updatableDocument.getDocumentFile().setFileInBytes(contentDocumentForUpdate);
+        return documentRepository.save(updatableDocument);
     }
 
     private DocumentEntity reassembleTitlePage(DocumentEntity document) {
-        byte[] contentInPdf = documentRepository.fetchContentInPdfByDocumentId(document.getId());
+        byte[] contentInPdf = document.getContentFile().getFileInBytes();
         byte[] titlePageInPdf = new PdfDocumentGenerator(contentInPdf, pathForPdfFont)
-                .getFilledA4TitleListDocument(getDocumentDataForPdf(document))
+                .getFilledA4TitleListDocument(getDocumentDataForPdf(document, getFullCode(document)))
                 .getPdfDocumentInBytes();
-        return documentRepository.updateDocumentInPdfByDocumentIdTransactional(document.getId(), titlePageInPdf);
+        document.getDocumentFile().setFileInBytes(titlePageInPdf);
+        document.setReassemblyRequired(false);
+        return documentRepository.save(document);
     }
 
     private DocumentEntity reassembleTableOfContents(DocumentEntity document) {
-        byte[] firstPageTemplate = documentTypeService.getFirstPageTemplateByTypeId(document.getDocumentType().getId());
-        byte[] generalPageTemplate = documentTypeService.getGeneralPageTemplateByTypeId(document.getDocumentType().getId());
-        List<DocumentEntity> documentEntities = documentRepository.fetchAllByProjectId(document.getProject().getId());
-        List<RowOfContentsDocument> rows = documentEntities.stream().filter(x -> !DocumentType.COVER_PAGE.equals(x.getDocumentType()))
+        byte[] firstPageTemplate = document.getDocumentType().getFirstPageFile().getFileInBytes();
+        byte[] generalPageTemplate = document.getDocumentType().getGeneralPageFile().getFileInBytes();
+        List<DocumentEntity> documentEntities = getAllByProjectId(document.getProject().getId());
+        List<RowOfContentsDocument> rows = documentEntities.stream()
+                .filter(x -> !COVER_PAGE.equals(x.getDocumentType().getType()))
                 .map(x -> RowOfContentsDocument.builder()
                         .column1(getFullCode(x))
                         .column2(x.getName())
@@ -296,120 +237,89 @@ public class DocumentService {
                 .toList();
         byte[] tableOfContentsInPdf = new PdfDocumentGenerator(firstPageTemplate, pathForPdfFont)
                 .getFilledContentsDocument(rows, generalPageTemplate)
-                .getFilledTextDocumentTitleBlock(getDocumentDataForPdf(document))
+                .getFilledTextDocumentTitleBlock(getDocumentDataForPdf(document, getFullCode(document)))
                 .getPdfDocumentInBytes();
-        documentRepository.updateContentInPdfByDocumentId(document.getId(), tableOfContentsInPdf);
-        return documentRepository.updateDocumentInPdfByDocumentIdTransactional(document.getId(), tableOfContentsInPdf);
+        document.getDocumentFile().setFileInBytes(tableOfContentsInPdf);
+        document.setReassemblyRequired(false);
+        return documentRepository.save(document);
     }
 
     private DocumentEntity reassembleGeneralInformation(DocumentEntity document) {
-        byte[] contentInPdf = documentRepository.fetchContentInPdfByDocumentId(document.getId());
+        byte[] contentInPdf = document.getContentFile().getFileInBytes();
         byte[] filledTextDocumentInPdf = new PdfDocumentGenerator(contentInPdf, pathForPdfFont)
-                .getFilledTextDocumentTitleBlock(getDocumentDataForPdf(document))
+                .getFilledTextDocumentTitleBlock(getDocumentDataForPdf(document, getFullCode(document)))
                 .getPdfDocumentInBytes();
-        return documentRepository.updateDocumentInPdfByDocumentIdTransactional(document.getId(), filledTextDocumentInPdf);
+        document.getDocumentFile().setFileInBytes(filledTextDocumentInPdf);
+        document.setReassemblyRequired(false);
+        return documentRepository.save(document);
     }
 
     private DocumentEntity reassembleDrawing(DocumentEntity document) {
-        byte[] contentInPdf = documentRepository.fetchContentInPdfByDocumentId(document.getId());
+        byte[] contentInPdf = document.getContentFile().getFileInBytes();
         byte[] filledDrawingDocumentInPdf = new PdfDocumentGenerator(contentInPdf, pathForPdfFont)
-                .getFilledBlueprintDocumentTitleBlock(getDocumentDataForPdf(document))
+                .getFilledBlueprintDocumentTitleBlock(getDocumentDataForPdf(document, getFullCode(document)))
                 .getPdfDocumentInBytes();
-        return documentRepository.updateDocumentInPdfByDocumentIdTransactional(document.getId(), filledDrawingDocumentInPdf);
+        document.getDocumentFile().setFileInBytes(filledDrawingDocumentInPdf);
+        document.setReassemblyRequired(false);
+        return documentRepository.save(document);
     }
 
-    private DocumentDataForPdf getDocumentDataForPdf(DocumentEntity document) {
-        CompanyDataForPdf companyDataForPdf = CompanyDataForPdf.builder()
-                .city(document.getProject().getCompany().getCity())
-                .logo(document.getProject().getCompany().getLogo())
-                .signerName(document.getProject().getCompany().getSignerName())
-                .signerPosition(document.getProject().getCompany().getSignerPosition())
-                .name(document.getProject().getCompany().getName())
-                .build();
-        return DocumentDataForPdf.builder()
-                .documentCode(getFullCode(document))
-                .documentName(document.getName())
-                .designerName(Optional.ofNullable(document.getDesigner())
-                        .map(UserEntity::getLastName)
-                        .orElse(Optional.ofNullable(document.getProject().getDesigner())
-                                .map(UserEntity::getLastName)
-                                .orElse("")))
-                .designerSign(Optional.ofNullable(document.getDesigner())
-                        .map(UserEntity::getSignature)
-                        .orElse(Optional.ofNullable(document.getProject().getDesigner())
-                                .map(UserEntity::getSignature)
-                                .orElse(null)))
-                .supervisorName(Optional.ofNullable(document.getSupervisor())
-                        .map(UserEntity::getLastName)
-                        .orElse(Optional.ofNullable(document.getProject().getSupervisor())
-                                .map(UserEntity::getLastName)
-                                .orElse("")))
-                .supervisorSign(Optional.ofNullable(document.getSupervisor())
-                        .map(UserEntity::getSignature)
-                        .orElse(Optional.ofNullable(document.getProject().getSupervisor())
-                                .map(UserEntity::getSignature)
-                                .orElse(null)))
-                .controllerName(Optional.ofNullable(document.getProject().getController())
-                        .map(UserEntity::getLastName)
-                        .orElse(null))
-                .controllerSign(Optional.ofNullable(document.getProject().getController())
-                        .map(UserEntity::getSignature)
-                        .orElse(null))
-                .chiefEngineerName(Optional.ofNullable(document.getProject().getChief())
-                        .map(UserEntity::getLastName)
-                        .orElse(null))
-                .chiefEngineerSign(Optional.ofNullable(document.getProject().getChief())
-                        .map(UserEntity::getSignature)
-                        .orElse(null))
-                .stage(document.getProject().getStage().getCode())
-                .projectName(document.getProject().getName())
-                .objectAddress(document.getProject().getObjectAddress())
-                .releaseDate(document.getProject().getReleaseDate().format(releaseDateFormat))
-                .company(companyDataForPdf)
-                .volumeNumber(document.getProject().getVolumeNumber())
-                .volumeName(document.getProject().getVolumeName())
-                .releaseDateForCover(document.getProject().getReleaseDate().format(releaseDateForCoverFormat))
-                .codeForCover(document.getProject().getCode())
-                .stageForCover(document.getProject().getStage().getName())
-                .build();
-    }
+    private DocumentEntity createGeneralInfo(DocumentEntity document, MultipartFile textFile) {
+        byte[] firstPageTemplate = document.getDocumentType().getFirstPageFile().getFileInBytes();
+        byte[] generalPageTemplate = document.getDocumentType().getGeneralPageFile().getFileInBytes();
+        if (textFile.isEmpty()) {
+            document.setContentFile(new FileEntity(firstPageTemplate));
+        } else {
+            if (textFile.getContentType() != null && textFile.getContentType().contains("text")) {
+                try {
+                    byte[] textInBytes = textFile.getBytes();
+                    byte[] textDocument = new PdfDocumentGenerator(firstPageTemplate, pathForPdfFont)
+                            .getFilledTextDocument(textInBytes, generalPageTemplate)
+                            .getPdfDocumentInBytes();
+                    document.setContentFile(new FileEntity(textDocument));
+                } catch (IOException e) {
+                    log.debug(e.getMessage(), e);
+                    throw new InvalidInputDataException("Can't create text document, broken file ", e);
+                }
+            } else {
+                throw new InvalidInputDataException("Can't create text document. Wrong file type");
+            }
 
-    private DocumentEntity getEmpty() {
-        return DocumentEntity.builder()
-                .id(null)
-                .numberInProject(0)
-                .documentType(DocumentType.DRAWING)
-                .name(defaultDocumentName)
-                .code(defaultDocumentCode)
-                .designer(new UserEntity())
-                .supervisor(new UserEntity())
-                .reassemblyRequired(true)
-                .editTime(LocalDateTime.now()).build();
-    }
-
-    private String getFullCode(DocumentEntity document) {
-        return String.format("%s-%d-%s-%d-%s",
-                document.getProject().getCode(),
-                document.getProject().getVolumeNumber(),
-                document.getCode(),
-                document.getNumberInProject(),
-                document.getProject().getStage().getCode());
-    }
-
-    private DocumentDto createGeneralInfo(DocumentDto document, byte[] text) {
-        byte[] firstPageTemplate = documentTypeService.getFirstPageTemplateByTypeId(document.getType().getId());
-        byte[] generalPageTemplate = documentTypeService.getGeneralPageTemplateByTypeId(document.getType().getId());
-        if (text == null || text.length == 0) {
-            return reassembleDocument(save(document, firstPageTemplate).getId());
         }
-        byte[] textDocument = new PdfDocumentGenerator(firstPageTemplate, pathForPdfFont).getFilledTextDocument(text, generalPageTemplate).getPdfDocumentInBytes();
-        return reassembleDocument(save(document, textDocument).getId());
+        return reassembleDocument(documentRepository.save(document));
     }
 
-    private DocumentDto createDrawing(DocumentDto document, byte[] drawing) {
-        if (drawing == null || drawing.length == 0) {
-            drawing = documentTypeService.getFirstPageTemplateByTypeId(document.getType().getId());
+    private DocumentEntity createDrawing(DocumentEntity document, MultipartFile drawingFile) {
+        if (drawingFile.isEmpty()) {
+            document.setContentFile(new FileEntity(document.getDocumentType().getFirstPageFile().getFileInBytes()));
+        } else {
+            if (drawingFile.getContentType() != null && drawingFile.getContentType().contains("pdf")) {
+                try {
+                    document.setContentFile(new FileEntity(drawingFile.getBytes()));
+                } catch (IOException e) {
+                    log.debug(e.getMessage(), e);
+                    throw new InvalidInputDataException("Can't create drawing document, broken file ", e);
+                }
+            } else {
+                throw new InvalidInputDataException("Can't create drawing document. Wrong file type");
+            }
         }
-        return reassembleDocument(save(document, drawing).getId());
+        return reassembleDocument(documentRepository.save(document));
+    }
+
+    private void updateBasicFieldsWithExistenceCheck(DocumentEntity document) {
+        document.setDocumentType(documentTypeService.getById(document.getDocumentType().getId()));
+        document.setSupervisor(Optional.ofNullable(document.getSupervisor())
+                .map(u -> userService.getById(u.getId()))
+                .orElse(null));
+        document.setDesigner(Optional.ofNullable(document.getSupervisor())
+                .map(u -> userService.getById(u.getId()))
+                .orElse(null));
+    }
+
+    private Integer getMaxDocumentNumberInProject(Long projectId) {
+        return documentRepository.findMaxDocumentNumberInProject(projectId).orElseThrow(() -> {
+            throw new NotFoundCustomApplicationException(String.format("There isn't any Document in Project with ID = %d. Please remove this project and create it again", projectId));
+        });
     }
 }
