@@ -1,8 +1,8 @@
 package com.dataart.blueprintsmanager.service;
 
+import com.dataart.blueprintsmanager.exceptions.AuthenticationApplicationException;
 import com.dataart.blueprintsmanager.exceptions.InvalidInputDataException;
 import com.dataart.blueprintsmanager.exceptions.NotFoundCustomApplicationException;
-import com.dataart.blueprintsmanager.exceptions.TokenValidationException;
 import com.dataart.blueprintsmanager.persistence.entity.FileEntity;
 import com.dataart.blueprintsmanager.persistence.entity.Role;
 import com.dataart.blueprintsmanager.persistence.entity.RoleEntity;
@@ -148,7 +148,7 @@ public class UserService {
             return userEntity;
         } catch (NotFoundCustomApplicationException e) {
             log.warn(e.getMessage(), e);
-            throw new InvalidInputDataException("Incorrect login or password.", e);
+            throw new AuthenticationApplicationException("Incorrect login or password.", e);
         }
     }
 
@@ -164,7 +164,7 @@ public class UserService {
                 return userEntity;
             }
         }
-        throw new TokenValidationException(String.format("Invalid token = %s", token));
+        throw new AuthenticationApplicationException(String.format("Invalid token = %s", token));
     }
 
     @Transactional(readOnly = true)
@@ -199,7 +199,7 @@ public class UserService {
             setSignToUser(currentUserForUpdate, signFile);
             return userRepository.save(currentUserForUpdate);
         }
-        throw new TokenValidationException(String.format("Current user %s have not rights to update user with Login = %s. ", currentUser.getLogin(), userForUpdate.getLogin()));
+        throw new AuthenticationApplicationException(String.format("Current user %s have not rights to update user with Login = %s. ", currentUser.getLogin(), userForUpdate.getLogin()));
     }
 
     @Transactional

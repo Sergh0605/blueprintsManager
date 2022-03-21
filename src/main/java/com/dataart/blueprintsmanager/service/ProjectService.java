@@ -1,7 +1,7 @@
 package com.dataart.blueprintsmanager.service;
 
 import com.dataart.blueprintsmanager.email.EmailService;
-import com.dataart.blueprintsmanager.exceptions.EditProjectException;
+import com.dataart.blueprintsmanager.exceptions.InvalidInputDataException;
 import com.dataart.blueprintsmanager.exceptions.NotFoundCustomApplicationException;
 import com.dataart.blueprintsmanager.pdf.PdfDocumentGenerator;
 import com.dataart.blueprintsmanager.persistence.entity.DocumentEntity;
@@ -65,7 +65,7 @@ public class ProjectService {
     @Transactional
     public ProjectEntity create(ProjectEntity projectForCreate) {
         if (isCodeDuplicated(projectForCreate.getCode())) {
-            throw new EditProjectException(String.format("Can't create project. Project with code = %s is already exists", projectForCreate.getCode()));
+            throw new InvalidInputDataException(String.format("Can't create project. Project with code = %s is already exists", projectForCreate.getCode()));
         }
         projectForCreate.setId(null);
         updateBasicFieldsWithExistenceCheck(projectForCreate);
@@ -117,7 +117,7 @@ public class ProjectService {
         ProjectEntity currentProject = getById(projectForUpdate.getId());
         if (!currentProject.getCode().equals(projectForUpdate.getCode())) {
             if (isCodeDuplicated(projectForUpdate.getCode())) {
-                throw new EditProjectException(String.format("Can't edit project. Project with code = %s is already exists", projectForUpdate.getCode()));
+                throw new InvalidInputDataException(String.format("Can't edit project. Project with code = %s is already exists", projectForUpdate.getCode()));
             }
         }
         updateBasicFieldsWithExistenceCheck(projectForUpdate);
