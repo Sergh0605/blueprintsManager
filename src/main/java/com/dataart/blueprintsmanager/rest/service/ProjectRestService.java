@@ -1,5 +1,8 @@
 package com.dataart.blueprintsmanager.rest.service;
 
+import com.dataart.blueprintsmanager.aop.track.ParamName;
+import com.dataart.blueprintsmanager.aop.track.UserAction;
+import com.dataart.blueprintsmanager.aop.track.UserActivityTracker;
 import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
 import com.dataart.blueprintsmanager.persistence.entity.ProjectFileEntity;
 import com.dataart.blueprintsmanager.rest.dto.ProjectDto;
@@ -42,7 +45,8 @@ public class ProjectRestService {
         return projectDto;
     }
 
-    public ProjectDto update(Long projectId, ProjectDto projectDto) {
+    @UserActivityTracker(action = UserAction.UPDATE_PROJECT, projectId = "#projectId.toString()")
+    public ProjectDto update(@ParamName("projectId") Long projectId, ProjectDto projectDto) {
         log.info("Try to update project with ID = {}", projectId);
         projectDto.setId(projectId);
         ProjectEntity updatedProject = projectService.update(projectMapper.projectDtoToProjectEntity(projectDto));
@@ -51,19 +55,22 @@ public class ProjectRestService {
         return updatedProjectDto;
     }
 
-    public void deleteById(Long projectId) {
+    @UserActivityTracker(action = UserAction.DELETE_PROJECT, projectId = "#projectId.toString()")
+    public void deleteById(@ParamName("projectId") Long projectId) {
         log.info("Try to mark as deleted Project with ID = {}", projectId);
         projectService.setDeleted(projectId, true);
         log.info("Project with ID = {} marked as deleted.", projectId);
     }
 
-    public void restoreById(Long projectId) {
+    @UserActivityTracker(action = UserAction.RESTORE_PROJECT, projectId = "#projectId.toString()")
+    public void restoreById(@ParamName("projectId") Long projectId) {
         log.info("Try to restore Project with ID = {}", projectId);
         projectService.setDeleted(projectId, false);
         log.info("Project with ID = {} restored.", projectId);
     }
 
-    public ProjectDto create(ProjectDto project) {
+    @UserActivityTracker(action = UserAction.CREATE_PROJECT, projectCode = "#project.getCode()")
+    public ProjectDto create(@ParamName("project") ProjectDto project) {
         log.info("Try to create new Project with CODE = {}", project.getCode());
         ProjectEntity createdProject = projectService.create(projectMapper.projectDtoToProjectEntity(project));
         ProjectDto createdProjectDto = projectMapper.projectEntityToProjectDto(createdProject);
@@ -71,13 +78,15 @@ public class ProjectRestService {
         return createdProjectDto;
     }
 
-    public void getFileForDownload(Long projectId, HttpServletResponse response) {
+    @UserActivityTracker(action = UserAction.DOWNLOAD_PROJECT, projectId = "#projectId.toString()")
+    public void getFileForDownload(@ParamName("projectId") Long projectId, HttpServletResponse response) {
         log.info("Try to find project in PDF for download. Project ID = {}", projectId);
         projectFileService.getMostRecentProjectFileForDownload(projectId, response);
         log.info("Project in PDF for download found. Project ID = {}", projectId);
     }
 
-    public ProjectDto assemble(Long projectId) {
+    @UserActivityTracker(action = UserAction.REASSEMBLY_PROJECT, projectId = "#projectId.toString()")
+    public ProjectDto assemble(@ParamName("projectId") Long projectId) {
         log.info("Try to assemble Project with ID = {}", projectId);
         ProjectEntity reassembledProject = projectService.reassembleForController(projectId);
         ProjectDto reassembledProjectDto = projectMapper.projectEntityToProjectDto(reassembledProject);
@@ -95,7 +104,8 @@ public class ProjectRestService {
         return projectDtoPage;
     }
 
-    public void getPdfFromHistoryForDownload(Long projectId, Long projectInPdfId, HttpServletResponse response) {
+    @UserActivityTracker(action = UserAction.DOWNLOAD_PROJECT, projectId = "#projectId.toString()")
+    public void getPdfFromHistoryForDownload(@ParamName("projectId") Long projectId, Long projectInPdfId, HttpServletResponse response) {
         log.info("Try to find project in PDF from History for download. Project ID = {}, history ID = {}", projectId, projectInPdfId);
         projectFileService.getProjectFileForDownload(projectId, projectInPdfId, response);
         log.info("Project in PDF for download found. Project ID = {}", projectId);

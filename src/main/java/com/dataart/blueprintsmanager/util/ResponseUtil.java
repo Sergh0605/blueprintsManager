@@ -1,7 +1,6 @@
 package com.dataart.blueprintsmanager.util;
 
 import com.dataart.blueprintsmanager.exceptions.CustomApplicationException;
-import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ContentDisposition;
 
@@ -11,9 +10,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
-@UtilityClass
 public class ResponseUtil {
-    public void getFile(HttpServletResponse response, byte[] documentInPdf, String documentFileName) {
+    public static void getFile(HttpServletResponse response, byte[] documentInPdf, String documentFileName) {
         response.setContentType("application/octet-stream");
         String headerKey = "Content-Disposition";
         ContentDisposition contentDisposition = ContentDisposition.builder("attachment")

@@ -40,7 +40,7 @@ public class CommentService {
                 .text(Optional.ofNullable(comment.getText()).orElse(""))
                 .project(projectService.getById(comment.getProject().getId()))
                 .document(Optional.ofNullable(comment.getDocument()).map(d -> documentService.getByIdAndProjectId(d.getId(), comment.getProject().getId())).orElse(null))
-                .user(userService.getById(comment.getUser().getId()))
+                .user(userService.getCurrentUser())
                 .deleted(false)
                 .build();
         return commentRepository.saveAndFlush(commentForCreate);

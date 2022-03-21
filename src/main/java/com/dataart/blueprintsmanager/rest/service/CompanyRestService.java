@@ -1,5 +1,8 @@
 package com.dataart.blueprintsmanager.rest.service;
 
+import com.dataart.blueprintsmanager.aop.track.ParamName;
+import com.dataart.blueprintsmanager.aop.track.UserAction;
+import com.dataart.blueprintsmanager.aop.track.UserActivityTracker;
 import com.dataart.blueprintsmanager.persistence.entity.CompanyEntity;
 import com.dataart.blueprintsmanager.rest.dto.CompanyDto;
 import com.dataart.blueprintsmanager.rest.mapper.CompanyMapper;
@@ -34,7 +37,8 @@ public class CompanyRestService {
         return companyDto;
     }
 
-    public CompanyDto update(Long companyId, CompanyDto companyDto, MultipartFile logoFile){
+    @UserActivityTracker(action = UserAction.UPDATE_COMPANY, companyId = "#companyId.toString()")
+    public CompanyDto update(@ParamName("companyId") Long companyId, CompanyDto companyDto, MultipartFile logoFile) {
         log.info("Try to update Company with ID = {}", companyId);
         companyDto.setId(companyId);
         CompanyEntity updatedCompany = companyService.update(companyMapper.companyDtoToCompanyEntity(companyDto), logoFile);
@@ -43,7 +47,8 @@ public class CompanyRestService {
         return updatedCompanyDto;
     }
 
-    public CompanyDto createCompany(CompanyDto companyDto, MultipartFile file) {
+    @UserActivityTracker(action = UserAction.CREATE_COMPANY, companyName = "#company.getName()")
+    public CompanyDto createCompany(@ParamName("company") CompanyDto companyDto, MultipartFile file) {
         log.info("Try to create new Company with NAME = {}", companyDto.getName());
         CompanyEntity createdCompany = companyService.create(companyMapper.companyDtoToCompanyEntity(companyDto), file);
         CompanyDto createdCompanyDto = companyMapper.companyEntityToCompanyDto(createdCompany);
@@ -51,13 +56,15 @@ public class CompanyRestService {
         return createdCompanyDto;
     }
 
-    public void deleteById(Long companyId) {
+    @UserActivityTracker(action = UserAction.DELETE_COMPANY, companyId = "#companyId.toString()")
+    public void deleteById(@ParamName("companyId") Long companyId) {
         log.info("Try to mark as deleted Company with ID = {}", companyId);
         companyService.setDeletedById(companyId, true);
         log.info("Company with ID = {} marked as deleted.", companyId);
     }
 
-    public void restoreById(Long companyId) {
+    @UserActivityTracker(action = UserAction.RESTORE_COMPANY, companyId = "#companyId.toString()")
+    public void restoreById(@ParamName("companyId") Long companyId) {
         log.info("Try to restore Company with ID = {}", companyId);
         companyService.setDeletedById(companyId, false);
         log.info("Project with ID = {} restored.", companyId);

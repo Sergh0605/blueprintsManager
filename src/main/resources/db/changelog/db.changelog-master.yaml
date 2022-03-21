@@ -9,3 +9,5 @@ databaseChangeLog:
       file: db/changelog/changelog-4.xml
   - include:
       file: db/changelog/changelog-5.xml
+  - include:
+      file: db/changelog/changelog-6.xml

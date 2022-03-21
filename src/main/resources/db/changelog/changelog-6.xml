@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+
+    <changeSet id="DB_add_table_for_roles" author="S.Puzakov">
+        <createTable tableName="bpm_role">
+            <column autoIncrement="true" name="id" type="bigint">
+                <constraints primaryKey="true" primaryKeyName="pk_role"/>
+            </column>
+            <column name="name" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="DB_add_ManyToManyTable_for_users-roles" author="S.Puzakov">
+        <createTable tableName="bpm_user_to_role">
+            <column name="role_id" type="bigint">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_users_roles"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_users_roles"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="bpm_user_to_role"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_userId_to_roleId"
+                                 referencedTableName="bpm_user"
+                                 referencedColumnNames="id"/>
+        <addForeignKeyConstraint baseTableName="bpm_user_to_role"
+                                 baseColumnNames="role_id"
+                                 constraintName="fk_roleId_to_userId"
+                                 referencedTableName="bpm_role"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DB_add_roles" author="S.Puzakov">
+        <insert tableName="bpm_role">
+            <column name="name" value="ADMIN"/>
+        </insert>
+        <insert tableName="bpm_role">
+            <column name="name" value="EDITOR"/>
+        </insert>
+        <insert tableName="bpm_role">
+            <column name="name" value="VIEWER"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="DB_add_RefreshToken_table" author="S.Puzakov">
+        <createTable tableName="bpm_token">
+            <column name="id" type="text">
+                <constraints primaryKey="true" primaryKeyName="pk_token"/>
+            </column>
+            <column name="exp_datetime" type="timestamptz">
+                <constraints nullable="false" />
+            </column>
+
+            <column name="disabled" type="boolean" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="user_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="bpm_token"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_userId_to_token"
+                                 referencedTableName="bpm_user"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="DB_add_UserActivity_table" author="S.Puzakov">
+        <createTable tableName="bpm_user_activity">
+            <column autoIncrement="true" name="id" type="bigint">
+                <constraints primaryKey="true" primaryKeyName="pk_user_activity"/>
+            </column>
+            <column name="login" type="varchar(100)">
+                <constraints nullable="false" />
+            </column>
+
+            <column name="action" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="message" type="text">
+                <constraints nullable="false" />
+            </column>
+
+            <column name="timestamp" type="timestamptz">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
+
+
+

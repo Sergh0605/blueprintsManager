@@ -15,14 +15,15 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class UserDto {
-    private Long id;
-
+public class UserRegistrationDto {
     @NotEmpty
     private String lastName;
 
     @NotEmpty
     private String login;
+
+    @NotEmpty
+    private String password;
 
     @NotNull
     @Valid
@@ -31,7 +32,6 @@ public class UserDto {
     @Email
     @NotNull
     private String email;
-    private Boolean deleted;
 
     @Valid
     private Set<BasicDto> roles;

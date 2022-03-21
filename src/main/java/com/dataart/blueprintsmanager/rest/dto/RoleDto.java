@@ -11,12 +11,8 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class BasicDto {
+public class RoleDto {
     @NotNull
     private Long id;
     private String name;
-
-    public BasicDto(Long id) {
-        this.id = id;
-    }
 }

@@ -1,6 +1,8 @@
 package com.dataart.blueprintsmanager.rest.service;
 
-import com.dataart.blueprintsmanager.exceptions.InvalidInputDataException;
+import com.dataart.blueprintsmanager.aop.track.ParamName;
+import com.dataart.blueprintsmanager.aop.track.UserAction;
+import com.dataart.blueprintsmanager.aop.track.UserActivityTracker;
 import com.dataart.blueprintsmanager.persistence.entity.CommentEntity;
 import com.dataart.blueprintsmanager.rest.dto.BasicDto;
 import com.dataart.blueprintsmanager.rest.dto.CommentDto;
@@ -8,6 +10,7 @@ import com.dataart.blueprintsmanager.rest.mapper.CommentMapper;
 import com.dataart.blueprintsmanager.service.CommentService;
 import com.dataart.blueprintsmanager.service.DocumentService;
 import com.dataart.blueprintsmanager.service.ProjectService;
+import com.dataart.blueprintsmanager.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,6 +28,7 @@ public class CommentRestService {
     private final CommentMapper commentMapper;
     private final ProjectService projectService;
     private final DocumentService documentService;
+    private final UserService userService;
 
     public Page<CommentDto> getByProjectIdPaginated(Long projectId, Pageable pageable) {
         log.info("Try to get {} page with {} comments in Project with ID = {}", pageable.getPageNumber(), pageable.getPageSize(), projectId);
@@ -44,13 +48,9 @@ public class CommentRestService {
         return commentDtoPage;
     }
 
-    public CommentDto createNewCommentForProject(Long projectId, CommentDto commentDto) {
+    @UserActivityTracker(action = UserAction.CREATE_COMMENT, projectId = "#projectId.toString()")
+    public CommentDto createNewCommentForProject(@ParamName("projectId") Long projectId, CommentDto commentDto) {
         log.info("Try to create new Comment for Project with ID = {}", projectId);
-        // TODO: 11.03.2022 Set user by security settings
-        if (commentDto.getUser() == null ||
-                commentDto.getUser().getId() == null) {
-            throw new InvalidInputDataException("Can't create comment. Wrong fields content.");
-        }
         commentDto.setProject(new BasicDto(projectId));
         CommentEntity createdComment = commentService.createNewComment(commentMapper.commentDtoToCommentEntity(commentDto));
         CommentDto createdCommentDto = commentMapper.commentEntityToCommentDto(createdComment);
@@ -58,13 +58,9 @@ public class CommentRestService {
         return createdCommentDto;
     }
 
-    public CommentDto createNewCommentForDocument(Long projectId, Long documentId, CommentDto commentDto) {
+    @UserActivityTracker(action = UserAction.CREATE_COMMENT, projectId = "#projectId.toString()")
+    public CommentDto createNewCommentForDocument(@ParamName("projectId") Long projectId, Long documentId, CommentDto commentDto) {
         log.info("Try to create new Comment for Document with ID = {} in Project with ID = {}", documentId, projectId);
-        // TODO: 11.03.2022 Set user by security settings
-        if (commentDto.getUser() == null ||
-                commentDto.getUser().getId() == null) {
-            throw new InvalidInputDataException("Can't create comment. Wrong fields content.");
-        }
         commentDto.setProject(new BasicDto(projectId, ""));
         commentDto.setDocument(new BasicDto(documentId, ""));
         CommentEntity createdComment = commentService.createNewComment(commentMapper.commentDtoToCommentEntity(commentDto));
@@ -73,13 +69,15 @@ public class CommentRestService {
         return createdCommentDto;
     }
 
-    public void deleteById(Long projectId, Long commentId) {
+    @UserActivityTracker(action = UserAction.DELETE_COMMENT, commentId = "#commentId.toString()")
+    public void deleteById(Long projectId, @ParamName("commentId") Long commentId) {
         log.info("Try to mark as deleted Comment with ID = {} in Project with ID = {}", commentId, projectId);
         commentService.setDeletedByIdAndProjectId(commentId ,projectId, true);
         log.info("Comment with ID = {} marked as deleted.", projectId);
     }
 
-    public void restoreById(Long projectId, Long commentId) {
+    @UserActivityTracker(action = UserAction.RESTORE_COMMENT, commentId = "#commentId.toString()")
+    public void restoreById(Long projectId, @ParamName("commentId") Long commentId) {
         log.info("Try to restore Comment with ID = {} in Project with ID = {}", projectId, projectId);
         commentService.setDeletedByIdAndProjectId(commentId ,projectId, false);
         log.info("Comment with ID = {} restored.", projectId);

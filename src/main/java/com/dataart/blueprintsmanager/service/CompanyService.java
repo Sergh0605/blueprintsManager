@@ -19,7 +19,6 @@ import java.util.List;
 @AllArgsConstructor
 public class CompanyService {
     private final CompanyRepository companyRepository;
-    private final UserService userService;
 
     @Transactional(readOnly = true)
     public List<CompanyEntity> getAllNotDeleted() {
@@ -61,7 +60,7 @@ public class CompanyService {
 
     @Transactional
     public CompanyEntity update(CompanyEntity companyForUpdate, MultipartFile logoFile) {
-        CompanyEntity currentCompany = companyRepository.getById(companyForUpdate.getId());
+        CompanyEntity currentCompany = getById(companyForUpdate.getId());
         if (!currentCompany.getName().equals(companyForUpdate.getName())) {
             if (existsByName(companyForUpdate.getName())) {
                 throw new InvalidInputDataException(String.format("Can't save Company. Company with NAME = %s is already exists", companyForUpdate.getName()));

@@ -5,18 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.NotNull;
-
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class BasicDto {
-    @NotNull
-    private Long id;
-    private String name;
-
-    public BasicDto(Long id) {
-        this.id = id;
-    }
+public class AuthResponseDto {
+    private String accessToken;
+    private String refreshToken;
 }
