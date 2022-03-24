@@ -10,6 +10,7 @@ import com.dataart.blueprintsmanager.persistence.repository.DocumentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -68,12 +69,11 @@ public class DocumentService {
         reassembleDocument(savedDocument);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.REPEATABLE_READ)  // TODO: 23.03.2022 make some research
     public DocumentEntity createEditableDocumentForSave(DocumentEntity document, MultipartFile file) {
         document.setId(null);
         document.setReassemblyRequired(true);
         document.setDeleted(false);
-        // TODO: 13.03.2022 could provide same number for different users - ping me to discuss
         document.setNumberInProject(getMaxDocumentNumberInProject(document.getProject().getId()) + 1);
         updateBasicFieldsWithExistenceCheck(document);
         DocumentType currentDocType = document.getDocumentType().getType();

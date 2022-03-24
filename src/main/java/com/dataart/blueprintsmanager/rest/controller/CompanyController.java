@@ -4,6 +4,7 @@ import com.dataart.blueprintsmanager.rest.dto.CompanyDto;
 import com.dataart.blueprintsmanager.rest.service.CompanyRestService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -38,7 +39,7 @@ public class CompanyController {
     @PostMapping
     public ResponseEntity<?> createCompany(@RequestPart @Valid CompanyDto companyDto,
                                            @RequestPart(value = "file", required = false) MultipartFile file) {
-        return ResponseEntity.ok(companyRestService.createCompany(companyDto, file));
+        return ResponseEntity.status(HttpStatus.CREATED).body(companyRestService.createCompany(companyDto, file));
     }
 
     @PostMapping(value = {"/{companyId}/disable"})

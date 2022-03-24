@@ -22,9 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.constraints.NotNull;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,11 +57,8 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserEntity> getAllByCompanyId(@NotNull Long companyId) {
-        List<UserEntity> userEntities = new ArrayList<>();
-        // TODO: 04.03.2022 Do we need null check here?
-        userEntities = userRepository.findAllByCompanyIdOrderByLastName(companyId);
-        return userEntities;
+    public List<UserEntity> getAllByCompanyId(Long companyId) {
+        return userRepository.findAllByCompanyIdOrderByLastName(companyId);
     }
 
     @Transactional(readOnly = true)

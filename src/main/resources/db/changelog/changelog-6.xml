@@ -53,7 +53,7 @@
                 <constraints primaryKey="true" primaryKeyName="pk_token"/>
             </column>
             <column name="exp_datetime" type="timestamptz">
-                <constraints nullable="false" />
+                <constraints nullable="false"/>
             </column>
 
             <column name="disabled" type="boolean" defaultValue="false">
@@ -61,7 +61,7 @@
             </column>
 
             <column name="user_id" type="bigint">
-                <constraints nullable="false" />
+                <constraints nullable="false"/>
             </column>
         </createTable>
         <addForeignKeyConstraint baseTableName="bpm_token"
@@ -77,7 +77,7 @@
                 <constraints primaryKey="true" primaryKeyName="pk_user_activity"/>
             </column>
             <column name="login" type="varchar(100)">
-                <constraints nullable="false" />
+                <constraints nullable="false"/>
             </column>
 
             <column name="action" type="varchar(100)">
@@ -85,13 +85,28 @@
             </column>
 
             <column name="message" type="text">
-                <constraints nullable="false" />
+                <constraints nullable="false"/>
             </column>
 
             <column name="timestamp" type="timestamptz">
-                <constraints nullable="false" />
+                <constraints nullable="false"/>
             </column>
         </createTable>
+    </changeSet>
+
+    <changeSet id="DB_insert_docTypeCodes" author="S.Puzakov">
+        <update tableName="bpm_document_type">
+            <column name="code" value="ОБЛ"/>
+            <where>name='Cover Page'</where>
+        </update>
+        <update tableName="bpm_document_type">
+            <column name="code" value="ТЛ"/>
+            <where>name='Title Page'</where>
+        </update>
+        <update tableName="bpm_document_type">
+            <column name="code" value="СП"/>
+            <where>name='Table Of Contents'</where>
+        </update>
     </changeSet>
 </databaseChangeLog>
 
