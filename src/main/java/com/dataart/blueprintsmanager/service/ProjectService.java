@@ -9,12 +9,17 @@ import com.dataart.blueprintsmanager.persistence.entity.FileEntity;
 import com.dataart.blueprintsmanager.persistence.entity.ProjectEntity;
 import com.dataart.blueprintsmanager.persistence.repository.ProjectRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +29,7 @@ import static com.dataart.blueprintsmanager.persistence.entity.DocumentType.*;
 
 @Service
 @Slf4j
+@Transactional(readOnly = true)
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final DocumentService documentService;
@@ -32,6 +38,11 @@ public class ProjectService {
     private final StageService stageService;
     private final EmailService emailService;
     private final ProjectFileService projectFileService;
+    private final EntityManager entityManager;
+
+    @Autowired
+    @Lazy
+    private ProjectService self;
 
 
     public ProjectService(ProjectRepository projectRepository,
@@ -40,7 +51,8 @@ public class ProjectService {
                           CompanyService companyService,
                           StageService stageService,
                           EmailService emailService,
-                          ProjectFileService projectFileService) {
+                          ProjectFileService projectFileService,
+                          EntityManager entityManager) {
         this.projectRepository = projectRepository;
         this.documentService = documentService;
         this.userService = userService;
@@ -48,14 +60,13 @@ public class ProjectService {
         this.stageService = stageService;
         this.emailService = emailService;
         this.projectFileService = projectFileService;
+        this.entityManager = entityManager;
     }
 
-    @Transactional(readOnly = true)
     public Page<ProjectEntity> getAllNotDeletedPaginated(Pageable pageable) {
         return projectRepository.findAllByDeletedOrderByEditTimeDesc(false, pageable);
     }
 
-    @Transactional(readOnly = true)
     public ProjectEntity getById(Long projectId) {
         return projectRepository.findById(projectId).orElseThrow(() -> {
             throw new NotFoundCustomApplicationException(String.format("Project with ID %d not found", projectId));
@@ -71,6 +82,7 @@ public class ProjectService {
         updateBasicFieldsWithExistenceCheck(projectForCreate);
         projectForCreate.setReassemblyRequired(true);
         projectForCreate.setDeleted(false);
+        projectForCreate.setDocumentNextNumber(4);
         ProjectEntity createdProject = projectRepository.save(projectForCreate);
         documentService.createDefaultDocument(createdProject, COVER_PAGE);
         documentService.createDefaultDocument(createdProject, TITLE_PAGE);
@@ -84,32 +96,8 @@ public class ProjectService {
     public DocumentEntity addNewEditableDocument(DocumentEntity document, MultipartFile file) {
         document.setProject(getById(document.getProject().getId()));
         document.setDocumentFile(new FileEntity());
+        document.setNumberInProject(self.getNextDocNumberByProjectId(document.getProject().getId()));
         return documentService.createEditableDocumentForSave(document, file);
-    }
-
-    private void updateBasicFieldsWithExistenceCheck(ProjectEntity project) {
-        project.setSupervisor(Optional.ofNullable(project.getSupervisor())
-                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
-                .orElse(null));
-        project.setDesigner(Optional.ofNullable(project.getDesigner())
-                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
-                .orElse(null));
-        project.setController(Optional.ofNullable(project.getController())
-                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
-                .orElse(null));
-        project.setChief(Optional.ofNullable(project.getChief())
-                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
-                .orElse(null));
-        project.setCompany(Optional.ofNullable(project.getCompany())
-                .map(c -> companyService.getById(c.getId()))
-                .orElse(null));
-        project.setStage(Optional.ofNullable(project.getStage())
-                .map(s -> stageService.getById(s.getId()))
-                .orElse(null));
-    }
-
-    private Boolean isCodeDuplicated(String code) {
-        return projectRepository.existsByCode(code);
     }
 
     @Transactional
@@ -121,6 +109,7 @@ public class ProjectService {
             }
         }
         updateBasicFieldsWithExistenceCheck(projectForUpdate);
+        entityManager.detach(currentProject);
         currentProject.setName(projectForUpdate.getName());
         currentProject.setObjectName(projectForUpdate.getObjectName());
         currentProject.setObjectAddress(projectForUpdate.getObjectAddress());
@@ -135,6 +124,8 @@ public class ProjectService {
         currentProject.setCompany(projectForUpdate.getCompany());
         currentProject.setStage(projectForUpdate.getStage());
         currentProject.setReassemblyRequired(true);
+        documentService.setReassemblyRequiredByProjectId(currentProject.getId(), true);
+        currentProject.setVersion(projectForUpdate.getVersion());
         ProjectEntity updatedProject = projectRepository.saveAndFlush(currentProject);
         emailService.sendEmailOnProjectEdit(updatedProject);
         return updatedProject;
@@ -180,5 +171,39 @@ public class ProjectService {
             }
         }
         return project;
+    }
+
+    private void updateBasicFieldsWithExistenceCheck(ProjectEntity project) {
+        project.setSupervisor(Optional.ofNullable(project.getSupervisor())
+                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
+                .orElse(null));
+        project.setDesigner(Optional.ofNullable(project.getDesigner())
+                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
+                .orElse(null));
+        project.setController(Optional.ofNullable(project.getController())
+                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
+                .orElse(null));
+        project.setChief(Optional.ofNullable(project.getChief())
+                .map(u -> userService.getByIdAndCompanyId(u.getId(), project.getCompany().getId()))
+                .orElse(null));
+        project.setCompany(Optional.ofNullable(project.getCompany())
+                .map(c -> companyService.getById(c.getId()))
+                .orElse(null));
+        project.setStage(Optional.ofNullable(project.getStage())
+                .map(s -> stageService.getById(s.getId()))
+                .orElse(null));
+    }
+
+    private Boolean isCodeDuplicated(String code) {
+        return projectRepository.existsByCode(code);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.REPEATABLE_READ)
+    public Integer getNextDocNumberByProjectId(Long projectId) {
+        ProjectEntity project = getById(projectId);
+        Integer documentNextNumber = project.getDocumentNextNumber();
+        project.setDocumentNextNumber(documentNextNumber + 1);
+        projectRepository.save(project);
+        return documentNextNumber;
     }
 }

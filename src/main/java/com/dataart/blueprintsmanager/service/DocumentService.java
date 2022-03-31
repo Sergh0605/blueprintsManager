@@ -7,13 +7,15 @@ import com.dataart.blueprintsmanager.pdf.PdfDocumentGenerator;
 import com.dataart.blueprintsmanager.pdf.RowOfContentsDocument;
 import com.dataart.blueprintsmanager.persistence.entity.*;
 import com.dataart.blueprintsmanager.persistence.repository.DocumentRepository;
+import com.dataart.blueprintsmanager.persistence.repository.ProjectRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ import static com.dataart.blueprintsmanager.util.ResponseUtil.getFile;
 
 @Service
 @Slf4j
+@Transactional(readOnly = true)
 public class DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentTypeService documentTypeService;
@@ -34,6 +37,8 @@ public class DocumentService {
     private final EmailService emailService;
     private final String pdfFileNameTemplate;
     private final String fullDocumentCodeTemplate;
+    private final ProjectRepository projectRepository;
+    private final EntityManager entityManager;
 
     public DocumentService(DocumentRepository documentRepository,
                            DocumentTypeService documentTypeService,
@@ -41,7 +46,9 @@ public class DocumentService {
                            @Value("${bpm.pdf.fontfilepath}") String pathForPdfFont,
                            EmailService emailService,
                            @Value("${bpm.document.filename.format}") String pdfFileNameTemplate,
-                           @Value("${bpm.project.fullDocumentCode.format}") String fullDocumentCodeTemplate) {
+                           @Value("${bpm.project.fullDocumentCode.format}") String fullDocumentCodeTemplate,
+                           ProjectRepository projectRepository,
+                           EntityManager entityManager) {
         this.documentRepository = documentRepository;
         this.documentTypeService = documentTypeService;
         this.userService = userService;
@@ -49,6 +56,8 @@ public class DocumentService {
         this.emailService = emailService;
         this.pdfFileNameTemplate = pdfFileNameTemplate;
         this.fullDocumentCodeTemplate = fullDocumentCodeTemplate;
+        this.projectRepository = projectRepository;
+        this.entityManager = entityManager;
     }
 
     @Transactional
@@ -69,12 +78,11 @@ public class DocumentService {
         reassembleDocument(savedDocument);
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)  // TODO: 23.03.2022 make some research
+    @Transactional(propagation = Propagation.REQUIRED)
     public DocumentEntity createEditableDocumentForSave(DocumentEntity document, MultipartFile file) {
         document.setId(null);
         document.setReassemblyRequired(true);
         document.setDeleted(false);
-        document.setNumberInProject(getMaxDocumentNumberInProject(document.getProject().getId()) + 1);
         updateBasicFieldsWithExistenceCheck(document);
         DocumentType currentDocType = document.getDocumentType().getType();
         if (GENERAL_INFORMATION.equals(currentDocType)) {
@@ -105,7 +113,6 @@ public class DocumentService {
         }
     }
 
-    @Transactional(readOnly = true)
     public List<DocumentEntity> getAllByProjectId(Long projectId) {
         List<DocumentEntity> documents = new ArrayList<>();
         if (projectId != null) {
@@ -114,21 +121,18 @@ public class DocumentService {
         return documents;
     }
 
-    @Transactional(readOnly = true)
     public DocumentEntity getById(Long documentId) {
         return documentRepository.findById(documentId).orElseThrow(() -> {
             throw new NotFoundCustomApplicationException(String.format("Document with ID %d not found", documentId));
         });
     }
 
-    @Transactional(readOnly = true)
     public DocumentEntity getByIdAndProjectId(Long documentId, Long projectId) {
         return documentRepository.findByIdAndProjectId(documentId, projectId).orElseThrow(() -> {
             throw new NotFoundCustomApplicationException(String.format("Document with ID = %d not found for Project with ID = %d", documentId, projectId));
         });
     }
 
-    @Transactional(readOnly = true)
     public void getFileForDownload(Long documentId, Long projectId, HttpServletResponse response) {
         DocumentEntity document = getByIdAndProjectId(documentId, projectId);
         byte[] documentInPdf = document.getDocumentFile().getFileInBytes();
@@ -141,9 +145,9 @@ public class DocumentService {
         updateBasicFieldsWithExistenceCheck(documentForUpdate);
         DocumentEntity updatableDocument = getByIdAndProjectId(documentForUpdate.getId(), documentForUpdate.getProject().getId());
         DocumentType currentDocType = updatableDocument.getDocumentType().getType();
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             if (GENERAL_INFORMATION.equals(currentDocType) || DRAWING.equals(currentDocType)) {
-                DocumentEntity updatedDocument = getUpdatedDocument(documentForUpdate, updatableDocument, null);
+                DocumentEntity updatedDocument = getUpdatedDocument(documentForUpdate, updatableDocument, updatableDocument.getContentFile().getFileInBytes());
                 emailService.sendEmailOnDocumentEdit(updatedDocument);
                 return updatedDocument;
             }
@@ -193,6 +197,11 @@ public class DocumentService {
             throw new InvalidInputDataException(String.format("Can't delete or restore Document with ID = %d. There is unmodified documentType.", documentId));
     }
 
+    public void setReassemblyRequiredByProjectId(Long projectId, boolean reassemblyRequired){
+        List<DocumentEntity> documents = getAllByProjectId(projectId);
+        documents.stream().peek(d -> d.setReassemblyRequired(reassemblyRequired)).forEach(documentRepository::save);
+    }
+
     private DocumentEntity reassembleCoverPage(DocumentEntity document) {
         byte[] contentInPdf = document.getContentFile().getFileInBytes();
         byte[] coverPageInPdf = new PdfDocumentGenerator(contentInPdf, pathForPdfFont)
@@ -209,7 +218,10 @@ public class DocumentService {
         updatableDocument.setDesigner(Optional.ofNullable(documentForUpdate.getDesigner()).orElse(updatableDocument.getDesigner()));
         updatableDocument.setSupervisor(Optional.ofNullable(documentForUpdate.getSupervisor()).orElse(updatableDocument.getSupervisor()));
         updatableDocument.setReassemblyRequired(true);
-        updatableDocument.getDocumentFile().setFileInBytes(contentDocumentForUpdate);
+        projectRepository.setReassemblyRequiredById(updatableDocument.getProject().getId(), true);
+        updatableDocument.getContentFile().setFileInBytes(contentDocumentForUpdate);
+        updatableDocument.setVersion(documentForUpdate.getVersion());
+        entityManager.detach(updatableDocument);
         return documentRepository.save(updatableDocument);
     }
 
@@ -267,7 +279,7 @@ public class DocumentService {
     private DocumentEntity createGeneralInfo(DocumentEntity document, MultipartFile textFile) {
         byte[] firstPageTemplate = document.getDocumentType().getFirstPageFile().getFileInBytes();
         byte[] generalPageTemplate = document.getDocumentType().getGeneralPageFile().getFileInBytes();
-        if (textFile.isEmpty()) {
+        if (textFile == null || textFile.isEmpty()) {
             document.setContentFile(new FileEntity(firstPageTemplate));
         } else {
             if (textFile.getContentType() != null && textFile.getContentType().contains("text")) {
@@ -290,7 +302,7 @@ public class DocumentService {
     }
 
     private DocumentEntity createDrawing(DocumentEntity document, MultipartFile drawingFile) {
-        if (drawingFile.isEmpty()) {
+        if (drawingFile == null || drawingFile.isEmpty()) {
             document.setContentFile(new FileEntity(document.getDocumentType().getFirstPageFile().getFileInBytes()));
         } else {
             if (drawingFile.getContentType() != null && drawingFile.getContentType().contains("pdf")) {
@@ -315,11 +327,5 @@ public class DocumentService {
         document.setDesigner(Optional.ofNullable(document.getSupervisor())
                 .map(u -> userService.getById(u.getId()))
                 .orElse(null));
-    }
-
-    private Integer getMaxDocumentNumberInProject(Long projectId) {
-        return documentRepository.findMaxDocumentNumberInProject(projectId).orElseThrow(() -> {
-            throw new NotFoundCustomApplicationException(String.format("There isn't any Document in Project with ID = %d. Please remove this project and create it again", projectId));
-        });
     }
 }

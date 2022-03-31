@@ -12,14 +12,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Slf4j
 @AllArgsConstructor
+@Transactional(readOnly = true)
 public class UserActivityService {
     private final UserActivityRepository userActivityRepository;
 
-    @Transactional(readOnly = true)
     public Page<UserActivityEntity> getAllPaginated(Pageable pageable) {
         return userActivityRepository.findAll(pageable);
     }
 
+    @Transactional
     public UserActivityEntity save(UserActivityEntity userActivityEntity) {
         return userActivityRepository.save(userActivityEntity);
     }

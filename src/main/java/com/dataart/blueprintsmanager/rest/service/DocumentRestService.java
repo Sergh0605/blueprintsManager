@@ -69,7 +69,7 @@ public class DocumentRestService {
     public DocumentDto update(Long projectId, @ParamName("documentId") Long documentId, DocumentDto documentDto, MultipartFile file) {
         log.info("Try to update Document with ID = {} in Project with ID = {}", documentId, projectId);
         documentDto.setId(documentId);
-        documentDto.setProject(new BasicDto(projectId, ""));
+        documentDto.setProject(new BasicDto(projectId));
         DocumentEntity updatedDocument = documentService.update(documentMapper.documentDtoToDocumentEntity(documentDto), file);
         DocumentDto updatedDocumentDto = documentMapper.documentEntityToDocumentDto(updatedDocument);
         log.info("Document with ID = {} updated", projectId);
@@ -87,7 +87,7 @@ public class DocumentRestService {
         return documentDtos;
     }
 
-    @UserActivityTracker(action = UserAction.CREATE_DOCUMENT, documentName = "#document.getName()")
+    @UserActivityTracker(action = UserAction.CREATE_DOCUMENT, documentName = "#document.getName()", projectId = "#projectId.toString()")
     public DocumentDto create(@ParamName("projectId") Long projectId, @ParamName("document") DocumentDto documentDto, MultipartFile file) {
         log.info("Try to create new Document with TYPE = {}", documentTypeService.getById(documentDto.getDocumentType().getId()).getType());
         documentDto.setProject(new BasicDto(projectId));

@@ -13,15 +13,14 @@ import java.util.List;
 @Service
 @Slf4j
 @AllArgsConstructor
+@Transactional(readOnly = true)
 public class StageService {
     private final StageRepository stageRepository;
 
-    @Transactional(readOnly = true)
     public List<StageEntity> getAll() {
         return stageRepository.findAll();
     }
 
-    @Transactional(readOnly = true)
     public StageEntity getById(Long stageId) {
         return stageRepository.findById(stageId).orElseThrow(() -> {
             throw new NotFoundCustomApplicationException(String.format("Stage with ID %d not found", stageId));

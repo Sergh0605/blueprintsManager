@@ -1,9 +1,6 @@
 package com.dataart.blueprintsmanager.persistence.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
@@ -13,6 +10,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@EqualsAndHashCode
 @Entity
 @Table(name = "bpm_document")
 public class DocumentEntity {
@@ -63,5 +61,9 @@ public class DocumentEntity {
 
     @Column(name = "deleted", nullable = false)
     private Boolean deleted;
+
+    @Column(name = "version")
+    @Version
+    private Long version;
 
 }

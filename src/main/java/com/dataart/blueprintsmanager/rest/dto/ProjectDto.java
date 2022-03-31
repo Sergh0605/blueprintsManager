@@ -46,4 +46,6 @@ public class ProjectDto {
     @Valid
     private BasicDto stage;
     private Boolean deleted;
+    @NotNull
+    private Long version;
 }

@@ -76,4 +76,11 @@ public class ProjectEntity {
 
     @Column(name = "deleted", nullable = false)
     private Boolean deleted;
+
+    @Column(name = "document_next_number")
+    private Integer documentNextNumber;
+
+    @Column(name = "version")
+    @Version
+    private Long version;
 }

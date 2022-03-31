@@ -1,6 +1,5 @@
 package com.dataart.blueprintsmanager.aop.track;
 
-import com.dataart.blueprintsmanager.exceptions.CustomApplicationException;
 import com.dataart.blueprintsmanager.persistence.entity.UserActivityEntity;
 import com.dataart.blueprintsmanager.service.UserActivityService;
 import lombok.AllArgsConstructor;
@@ -10,14 +9,11 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -25,6 +21,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Optional;
+
+import static com.dataart.blueprintsmanager.config.security.SecurityUtil.getCurrentUserLogin;
 
 @Aspect
 @Component
@@ -42,29 +40,16 @@ public class LogAndTrackUserActivityAspect {
         try {
             Object object = joinPoint.proceed();
             userActivity.setMessage(getMessage(joinPoint, userActivityTracker));
-            userActivityService.save(userActivity);
             return object;
-        } catch (CustomApplicationException e) {
-            userActivity.setMessage(e.getMessage());
-            userActivityService.save(userActivity);
+        } catch (CannotAcquireLockException e) {
+            userActivity.setMessage(e.getCause().getCause().getMessage());
             throw e;
+        } catch (Exception e) {
+            userActivity.setMessage(e.getMessage());
+            throw e;
+        } finally {
+            userActivityService.save(userActivity);
         }
-    }
-
-    private String getCurrentUserLogin() {
-        SecurityContext securityContext = SecurityContextHolder.getContext();
-        Authentication authentication = securityContext.getAuthentication();
-
-        if (authentication == null) {
-            return "anonymous";
-        }
-        if (authentication.getPrincipal() instanceof String login) {
-            return login;
-        }
-        if (authentication.getPrincipal() instanceof UserDetails springSecurityUser) {
-            return springSecurityUser.getUsername();
-        }
-        return "anonymous";
     }
 
     private String getMessage(ProceedingJoinPoint joinPoint, UserActivityTracker userActivityTracker) {
@@ -83,12 +68,10 @@ public class LogAndTrackUserActivityAspect {
                     String.format(action.getAfterActionLogMessageTemplate(), getStringParam(context, userActivityTracker.projectCode()));
             case DOWNLOAD_DOCUMENT ->
                     String.format(action.getAfterActionLogMessageTemplate(), getStringParam(context, userActivityTracker.projectId()), getStringParam(context, userActivityTracker.documentId()));
-            case DELETE_DOCUMENT, RESTORE_DOCUMENT, UPDATE_DOCUMENT ->
+            case DELETE_DOCUMENT, RESTORE_DOCUMENT, UPDATE_DOCUMENT, REASSEMBLY_DOCUMENT ->
                     String.format(action.getAfterActionLogMessageTemplate(), getStringParam(context, userActivityTracker.documentId()));
-            case REASSEMBLY_DOCUMENT ->
-                    String.format(action.getAfterActionLogMessageTemplate(), getStringParam(context, userActivityTracker.documentId()), getStringParam(context, userActivityTracker.projectId()));
             case CREATE_DOCUMENT ->
-                    String.format(action.getAfterActionLogMessageTemplate(), getStringParam(context, userActivityTracker.documentName()));
+                    String.format(action.getAfterActionLogMessageTemplate(), getStringParam(context, userActivityTracker.documentName()), getStringParam(context, userActivityTracker.projectId()));
             case UPDATE_COMPANY, RESTORE_COMPANY, DELETE_COMPANY ->
                     String.format(action.getAfterActionLogMessageTemplate(), getStringParam(context, userActivityTracker.companyId()));
             case CREATE_COMPANY ->

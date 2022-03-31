@@ -12,10 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Slf4j
 @AllArgsConstructor
+@Transactional(readOnly = true)
 public class RoleService {
     private final RoleRepository roleRepository;
 
-    @Transactional(readOnly = true)
     public RoleEntity getById(Long roleId) {
         return roleRepository.findById(roleId).orElseThrow(() -> {
             throw new NotFoundCustomApplicationException(String.format("Role with ID = %d not found", roleId));

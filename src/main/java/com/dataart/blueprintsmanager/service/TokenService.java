@@ -1,6 +1,7 @@
 package com.dataart.blueprintsmanager.service;
 
 import com.dataart.blueprintsmanager.config.security.TokenType;
+import com.dataart.blueprintsmanager.exceptions.AuthenticationApplicationException;
 import com.dataart.blueprintsmanager.exceptions.NotFoundCustomApplicationException;
 import com.dataart.blueprintsmanager.persistence.entity.RoleEntity;
 import com.dataart.blueprintsmanager.persistence.entity.TokenEntity;
@@ -22,14 +23,20 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@Transactional(readOnly = true)
 public class TokenService {
     private final TokenRepository tokenRepository;
 
     private final String jwtSecret;
 
-    public TokenService(TokenRepository tokenRepository, @Value("${bpm.jwt.secret}") String jwtSecret) {
+    private final Long tokenExpLength;
+
+    public TokenService(TokenRepository tokenRepository,
+                        @Value("${bpm.jwt.secret}") String jwtSecret,
+                        @Value("${bpm.jwt.exp.length}") Long tokenExpLength) {
         this.tokenRepository = tokenRepository;
         this.jwtSecret = jwtSecret;
+        this.tokenExpLength = tokenExpLength;
     }
 
     public TokenEntity getById(String tokenId) {
@@ -40,7 +47,7 @@ public class TokenService {
 
     @Transactional
     public String generateAccessToken(UserEntity user) {
-        LocalDateTime tokenExpDateTime = LocalDateTime.now().plus(5, ChronoUnit.MINUTES);
+        LocalDateTime tokenExpDateTime = LocalDateTime.now().plus(tokenExpLength, ChronoUnit.MINUTES);
         Date date = Date.from(tokenExpDateTime.toInstant(ZonedDateTime.now().getOffset()));
         String token = Jwts.builder()
                 .setSubject(String.valueOf(user.getLogin()))
@@ -84,12 +91,12 @@ public class TokenService {
         tokenRepository.setDisableByUserId(userId);
     }
 
-    public Claims validateAccessToken(String token) {
-        return validateToken(token, TokenType.ACCESS);
+    public Claims getValidAccessTokenClaims(String token) {
+        return getValidTokenClaims(token, TokenType.ACCESS);
     }
 
-    public Claims validateRefreshToken(String token) {
-        return validateToken(token, TokenType.REFRESH);
+    public Claims getValidRefreshTokenClaims(String token) {
+        return getValidTokenClaims(token, TokenType.REFRESH);
     }
 
     public String getUserLoginFromToken(String token) {
@@ -102,25 +109,24 @@ public class TokenService {
         return tokenEntity != null && !tokenEntity.getDisabled() && !tokenEntity.getUser().getDeleted();
     }
 
-    private Claims validateToken(String token, TokenType tokenType) {
+    private Claims getValidTokenClaims(String token, TokenType tokenType) {
         try {
             Claims claims = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody();
             if (tokenType.equals(TokenType.valueOf(claims.getAudience())) && validateTokenInDb(token)) {
                 return claims;
             }
-            return null;
-        } catch (ExpiredJwtException expEx) {
-            log.warn("Token expired");
-        } catch (UnsupportedJwtException unsEx) {
-            log.warn("Unsupported jwt");
-        } catch (MalformedJwtException mjEx) {
-            log.warn("Malformed jwt");
-        } catch (SignatureException sEx) {
-            log.warn("Invalid signature");
+        } catch (ExpiredJwtException e) {
+            throw new AuthenticationApplicationException("Token expired", e);
+        } catch (UnsupportedJwtException e) {
+            throw new AuthenticationApplicationException("Unsupported jwt", e);
+        } catch (MalformedJwtException e) {
+            throw new AuthenticationApplicationException("Malformed jwt", e);
+        } catch (SignatureException e) {
+            throw new AuthenticationApplicationException("Invalid signature", e);
         } catch (Exception e) {
-            log.warn("invalid token");
+            throw new AuthenticationApplicationException("Invalid token", e);
         }
-        return null;
+        throw new AuthenticationApplicationException("Wrong type of token or disabled token.");
     }
 
 }

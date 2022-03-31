@@ -108,6 +108,47 @@
             <where>name='Table Of Contents'</where>
         </update>
     </changeSet>
+
+    <changeSet id="DB_drop_null_for_company-id" author="S.Puzakov">
+        <dropNotNullConstraint tableName="bpm_user"
+                               columnName="company_id"/>
+    </changeSet>
+
+    <changeSet id="DB_change_last-name_column_length" author="S.Puzakov">
+        <modifyDataType tableName="bpm_user" columnName="last_name" newDataType="varchar(100)"/>
+    </changeSet>
+
+    <changeSet id="DB_add_admin" author="S.Puzakov">
+        <preConditions onFail="MARK_RAN">
+                <sqlCheck expectedResult="0">select count(login) from bpm_user where login = 'admin'</sqlCheck>
+        </preConditions>
+        <comment>Add default admin credentials</comment>
+        <sqlFile path="sql_scripts/add-default-admin.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="DB_add_docCount_for_Project" author="S.Puzakov">
+        <addColumn tableName="bpm_project">
+            <column name="document_next_number" type="integer">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="DB_add_Version_for_Project" author="S.Puzakov">
+        <addColumn tableName="bpm_project">
+            <column name="version" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="DB_add_Version_for_Documents" author="S.Puzakov">
+        <addColumn tableName="bpm_document">
+            <column name="version" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
 
 

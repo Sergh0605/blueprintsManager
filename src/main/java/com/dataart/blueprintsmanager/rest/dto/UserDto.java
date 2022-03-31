@@ -24,8 +24,6 @@ public class UserDto {
     @NotEmpty
     private String login;
 
-    @NotNull
-    @Valid
     private BasicDto company;
 
     @Email

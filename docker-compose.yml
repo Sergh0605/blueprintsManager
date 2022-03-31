@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  app:
+    image: 'blueprints-manager:latest'
+    build:
+      context: .
+    container_name: bpm
+    depends_on:
+      - db
+    environment:
+      - BLUEPRINTS_MANAGER_DB_URL=jdbc:postgresql://db:5432/bp_manager
+      - BLUEPRINTS_MANAGER_PORT=8085
+      - BLUEPRINTS_MANAGER_APP_URL=http://localhost:8090
+      - BLUEPRINTS_MANAGER_EMAIL_HOST=smtp.gmail.com
+      - BLUEPRINTS_MANAGER_EMAIL_PORT=587
+      - JWT_EXP_LENGTH=5
+    ports:
+      - "8090:8085"
+    volumes:
+      - "./docker-volumes/bpm/log:/opt/app/log"
+    env_file: ./bpm-credentials.env
+
+  db:
+    image: 'postgres:latest'
+    container_name: db
+    environment:
+      - POSTGRES_DB=bp_manager
+    ports:
+      - "5400:5432"
+    volumes:
+      - "./docker-volumes/db/data:/var/lib/postgresql/data"
+    env_file: ./bpm-credentials.env

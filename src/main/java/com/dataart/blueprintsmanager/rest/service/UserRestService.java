@@ -45,17 +45,8 @@ public class UserRestService {
         return createdUserDto;
     }
 
-    @UserActivityTracker(action = UserAction.REG_USER, login = "#user.getLogin()")
-    public UserDto userSelfRegistration(@ParamName("user") UserRegistrationDto user, MultipartFile file) {
-        log.info("Try to create new User with Login = {} by User", user.getLogin());
-        UserEntity createdUser = userService.userSelfRegistration(userMapper.userRegDtoToUserEntity(user), file);
-        UserDto createdUserDto = userMapper.userEntityToUserDto(createdUser);
-        log.info("User with Login {} created with ID = {}", createdUserDto.getLogin(), createdUserDto.getId());
-        return createdUserDto;
-    }
-
     @UserActivityTracker(action = UserAction.LOGIN, login = "#user.getLogin()")
-    public AuthResponseDto authentication(@ParamName("user") UserAuthDto user) {
+    public AuthResponseDto getAuthentication(@ParamName("user") UserAuthDto user) {
         log.info("Try to authenticate User with Login = {}", user.getLogin());
         UserEntity userEntity = userService.userAuthentication(userMapper.userAuthDtoToUserEntity(user));
         AuthResponseDto authResponse = new AuthResponseDto(userEntity.getAccessToken(), userEntity.getRefreshToken());
@@ -64,9 +55,9 @@ public class UserRestService {
     }
 
     @UserActivityTracker(action = UserAction.REFRESH_TOKEN)
-    public AuthResponseDto tokenAuthentication(AuthRequestByTokenDto request) {
+    public AuthResponseDto refreshUserTokens(AuthRequestByTokenDto request) {
         log.info("Try to authenticate User by REFRESH TOKEN = {}", request.getToken());
-        UserEntity user = userService.userTokenAuthentication(request.getToken());
+        UserEntity user = userService.getUserWithRefreshedTokens(request.getToken());
         AuthResponseDto authResponse = new AuthResponseDto(user.getAccessToken(), user.getRefreshToken());
         log.info("Tokens was refreshed for User with Login = {} ", user.getLogin());
         return authResponse;

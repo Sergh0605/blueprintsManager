@@ -1,6 +1,8 @@
 package com.dataart.blueprintsmanager.rest.controller;
 
-import com.dataart.blueprintsmanager.rest.dto.*;
+import com.dataart.blueprintsmanager.rest.dto.RoleDto;
+import com.dataart.blueprintsmanager.rest.dto.UserDto;
+import com.dataart.blueprintsmanager.rest.dto.UserRegistrationDto;
 import com.dataart.blueprintsmanager.rest.service.UserRestService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,12 +35,6 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userRestService.registerByAdmin(user, file));
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> userSelfRegistration(@RequestPart @Valid UserRegistrationDto user,
-                                                    @RequestPart(value = "file", required = false) MultipartFile file) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userRestService.userSelfRegistration(user, file));
-    }
-
     @PutMapping(value = {"/{userId}"})
     public ResponseEntity<?> updateUser(@PathVariable Long userId,
                                           @RequestPart @Valid UserDto user,
@@ -50,21 +46,5 @@ public class UserController {
     public ResponseEntity<?> updateRoles(@PathVariable Long userId,
                                           @RequestBody @Valid Set<RoleDto> roles) {
         return ResponseEntity.ok(userRestService.updateRoles(userId, roles));
-    }
-
-    @PostMapping("/auth")
-    public ResponseEntity<?> authentication(@RequestBody @Valid UserAuthDto user) {
-        return ResponseEntity.ok(userRestService.authentication(user));
-    }
-
-    @PostMapping("/refresh_token_auth")
-    public ResponseEntity<?> authentication(@RequestBody @Valid AuthRequestByTokenDto request) {
-        return ResponseEntity.ok(userRestService.tokenAuthentication(request));
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
-        userRestService.logout();
-        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

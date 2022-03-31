@@ -43,6 +43,9 @@ public class BlueprintsManagerTest {
     @Autowired
     DocumentRepository documentRepository;
 
+    @Autowired
+    UserActivityRepository userActivityRepository;
+
     @BeforeEach
     void initDb() throws Exception {
         executeSql("initDb.sql");
@@ -124,6 +127,7 @@ public class BlueprintsManagerTest {
                 .volumeNumber(1L)
                 .company(new BasicDto(companyRepository.findAll().get(0).getId()))
                 .stage(new BasicDto(1L))
+                .version(1L)
                 .build();
     }
 

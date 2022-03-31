@@ -15,19 +15,18 @@ import java.util.Optional;
 @Service
 @Slf4j
 @AllArgsConstructor
+@Transactional(readOnly = true)
 public class CommentService {
     private final CommentRepository commentRepository;
     private final ProjectService projectService;
     private final DocumentService documentService;
     private final UserService userService;
 
-    @Transactional(readOnly = true)
     public Page<CommentEntity> getPageOfCommentsForProject(Long projectId, Pageable pageable) {
         projectService.getById(projectId);
         return commentRepository.findByProjectIdAndDeletedOrderByPublicationDateTimeDesc(projectId, false, pageable);
     }
 
-    @Transactional(readOnly = true)
     public Page<CommentEntity> getPageOfCommentsForDocument(Long projectId, Long documentId, Pageable pageable) {
         projectService.getById(projectId);
         return commentRepository.findByDocumentIdAndProjectIdAndDeletedOrderByPublicationDateTimeDesc(documentId, projectId, false, pageable);

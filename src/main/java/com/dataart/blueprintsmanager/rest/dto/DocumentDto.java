@@ -33,4 +33,6 @@ public class DocumentDto {
     private LocalDateTime editTime;
     private Boolean deleted;
     private String documentFullCode;
+    @NotNull
+    private Long version;
 }

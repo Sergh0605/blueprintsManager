@@ -2,12 +2,11 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
-    <changeSet id="DB_add_companies_for_tests" author="S.Puzakov">
-        <comment>Fill table USER</comment>
-        <sqlFile path="test-companies.sql" relativeToChangelogFile="true"/>
-    </changeSet>
-    <changeSet id="DB_add_users_for_tests" author="S.Puzakov">
-        <comment>Fill table USER</comment>
-        <sqlFile path="test-users.sql" relativeToChangelogFile="true"/>
+    <changeSet id="DB_add_docCount_for_Project" author="S.Puzakov">
+        <addColumn tableName="bpm_project">
+            <column name="document_count" type="integer">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

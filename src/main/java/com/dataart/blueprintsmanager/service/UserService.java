@@ -13,13 +13,10 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -27,9 +24,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.dataart.blueprintsmanager.config.security.SecurityUtil.getCurrentUserLogin;
+
 @Service
 @Slf4j
 @AllArgsConstructor
+@Transactional(readOnly = true)
 public class UserService {
     private final UserRepository userRepository;
     private final CompanyService companyService;
@@ -37,43 +37,30 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
 
-    @Transactional(readOnly = true)
     public Page<UserEntity> getAllNotDeletedPaginated(Pageable pageable) {
         return userRepository.findAllByDeletedOrderByCompany(false, pageable);
     }
 
-    @Transactional(readOnly = true)
     public UserEntity getById(Long userId) {
         return userRepository.findById(userId).orElseThrow(() -> {
             throw new NotFoundCustomApplicationException(String.format("User with ID = %d not found", userId));
         });
     }
 
-    @Transactional(readOnly = true)
     public UserEntity getByIdAndCompanyId(Long userId, Long companyId) {
         return userRepository.findByIdAndCompanyId(userId, companyId).orElseThrow(() -> {
             throw new NotFoundCustomApplicationException(String.format("User with ID = %d not found for Company with ID = %d", userId, companyId));
         });
     }
 
-    @Transactional(readOnly = true)
     public List<UserEntity> getAllByCompanyId(Long companyId) {
         return userRepository.findAllByCompanyIdOrderByLastName(companyId);
     }
 
-    @Transactional(readOnly = true)
     public UserEntity getByLogin(String login) {
         return userRepository.findByLogin(login).orElseThrow(() -> {
             throw new NotFoundCustomApplicationException(String.format("User with Login = %s not found", login));
         });
-    }
-
-    private UserEntity getByLoginAndPassword(UserEntity inputUserEntity) {
-        UserEntity validUser = getByLogin(inputUserEntity.getLogin());
-        if (passwordEncoder.matches(inputUserEntity.getPassword(), validUser.getPassword())) {
-            return validUser;
-        }
-        throw new NotFoundCustomApplicationException(String.format("Incorrect password for user with Login = %s", inputUserEntity.getLogin()));
     }
 
     @Transactional
@@ -98,42 +85,6 @@ public class UserService {
     }
 
     @Transactional
-    public UserEntity userSelfRegistration(UserEntity user, MultipartFile signFile) {
-        fillMainFields(user, signFile);
-        user.setRoles(Set.of(roleService.getById(3L)));
-        return userRepository.save(user);
-    }
-
-    private void fillMainFields(UserEntity user, MultipartFile signFile) {
-        if (existsByLogin(user.getLogin())) {
-            throw new InvalidInputDataException(String.format("Can't create User. User with Login = %s is already exists", user.getLogin()));
-        }
-        user.setCompany(companyService.getById(user.getCompany().getId()));
-        user.setDeleted(false);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setSignatureFile(new FileEntity());
-        setSignToUser(user, signFile);
-    }
-
-    private void setSignToUser(UserEntity user, MultipartFile signFile) {
-        if (signFile != null) {
-            if (!signFile.isEmpty() && signFile.getContentType().contains("image")) {
-                try {
-                    user.getSignatureFile().setFileInBytes(signFile.getInputStream().readAllBytes());
-                } catch (IOException e) {
-                    log.debug(e.getMessage(), e);
-                    throw new InvalidInputDataException(String.format("Can't save User with Login = %s. Broken sign file", user.getLogin()), e);
-                }
-                throw new InvalidInputDataException("Can't save User. Wrong type of sign file.");
-            }
-        }
-    }
-
-    private boolean existsByLogin(String login) {
-        return userRepository.existsByLogin(login);
-    }
-
-    @Transactional
     public UserEntity userAuthentication(UserEntity userToAuth) {
         try {
             UserEntity userEntity = getByLoginAndPassword(userToAuth);
@@ -148,8 +99,8 @@ public class UserService {
     }
 
     @Transactional
-    public UserEntity userTokenAuthentication(String token) {
-        Claims claims = tokenService.validateRefreshToken(token);
+    public UserEntity getUserWithRefreshedTokens(String token) {
+        Claims claims = tokenService.getValidRefreshTokenClaims(token);
         if (claims != null) {
             UserEntity userEntity = getByLogin(claims.getSubject());
             if (!userEntity.getDeleted()) {
@@ -162,15 +113,12 @@ public class UserService {
         throw new AuthenticationApplicationException(String.format("Invalid token = %s", token));
     }
 
-    @Transactional(readOnly = true)
     public UserEntity getCurrentUser() {
-        SecurityContext securityContext = SecurityContextHolder.getContext();
-        Authentication authentication = securityContext.getAuthentication();
-
-        if (authentication != null && authentication.getPrincipal() instanceof UserDetails springSecurityUser) {
-            return getByLogin(springSecurityUser.getUsername());
+        String currentUserLogin = getCurrentUserLogin();
+        if (currentUserLogin.equals("anonymous")) {
+            throw new NotFoundCustomApplicationException("Current user not found.");
         }
-        throw new NotFoundCustomApplicationException("Current user not found.");
+        return getByLogin(currentUserLogin);
     }
 
     @Transactional
@@ -189,9 +137,14 @@ public class UserService {
                     throw new InvalidInputDataException(String.format("Can't save User. User with Login = %s is already exists", userForUpdate.getLogin()));
                 }
             }
+            currentUserForUpdate.setLogin(userForUpdate.getLogin());
             currentUserForUpdate.setLastName(userForUpdate.getLastName());
             currentUserForUpdate.setEmail(userForUpdate.getEmail());
             setSignToUser(currentUserForUpdate, signFile);
+            if (StringUtils.hasText(userForUpdate.getPassword())) {
+                currentUserForUpdate.setPassword(passwordEncoder.encode(userForUpdate.getPassword()));
+                logoutById(currentUser.getId());
+            }
             return userRepository.save(currentUserForUpdate);
         }
         throw new AuthenticationApplicationException(String.format("Current user %s have not rights to update user with Login = %s. ", currentUser.getLogin(), userForUpdate.getLogin()));
@@ -202,5 +155,43 @@ public class UserService {
         UserEntity userForUpdate = getById(userId);
         userForUpdate.setRoles(rolesForUpdate.stream().map(r -> roleService.getById(r.getId())).collect(Collectors.toSet()));
         return userRepository.save(userForUpdate);
+    }
+
+    private UserEntity getByLoginAndPassword(UserEntity inputUserEntity) {
+        UserEntity validUser = getByLogin(inputUserEntity.getLogin());
+        if (passwordEncoder.matches(inputUserEntity.getPassword(), validUser.getPassword())) {
+            return validUser;
+        }
+        throw new NotFoundCustomApplicationException(String.format("Incorrect password for user with Login = %s", inputUserEntity.getLogin()));
+    }
+
+    private void setSignToUser(UserEntity user, MultipartFile signFile) {
+        if (signFile != null) {
+            if (!signFile.isEmpty() && signFile.getContentType().contains("image")) {
+                try {
+                    user.getSignatureFile().setFileInBytes(signFile.getInputStream().readAllBytes());
+                } catch (IOException e) {
+                    log.debug(e.getMessage(), e);
+                    throw new InvalidInputDataException(String.format("Can't save User with Login = %s. Broken sign file", user.getLogin()), e);
+                }
+            } else {
+                throw new InvalidInputDataException("Can't save User. Wrong type of sign file.");
+            }
+        }
+    }
+
+    private boolean existsByLogin(String login) {
+        return userRepository.existsByLogin(login);
+    }
+
+    private void fillMainFields(UserEntity user, MultipartFile signFile) {
+        if (existsByLogin(user.getLogin())) {
+            throw new InvalidInputDataException(String.format("Can't create User. User with Login = %s is already exists", user.getLogin()));
+        }
+        user.setCompany(companyService.getById(user.getCompany().getId()));
+        user.setDeleted(false);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setSignatureFile(new FileEntity());
+        setSignToUser(user, signFile);
     }
 }

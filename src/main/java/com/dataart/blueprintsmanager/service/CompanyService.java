@@ -17,15 +17,14 @@ import java.util.List;
 @Service
 @Slf4j
 @AllArgsConstructor
+@Transactional(readOnly = true)
 public class CompanyService {
     private final CompanyRepository companyRepository;
 
-    @Transactional(readOnly = true)
     public List<CompanyEntity> getAllNotDeleted() {
         return companyRepository.findAllByDeletedOrderByName(false);
     }
 
-    @Transactional(readOnly = true)
     public CompanyEntity getById(Long companyId) {
         return companyRepository.findById(companyId).orElseThrow(() -> {
             throw new NotFoundCustomApplicationException(String.format("Company with ID %d not found", companyId));
@@ -42,20 +41,6 @@ public class CompanyService {
         company.setLogoFile(new FileEntity());
         setLogoToCompany(company, logoFile);
         return companyRepository.save(company);
-    }
-
-    private void setLogoToCompany(CompanyEntity company, MultipartFile logoFile) {
-        if (logoFile != null) {
-            if (!logoFile.isEmpty() && logoFile.getContentType().contains("image")) {
-                try {
-                    company.getLogoFile().setFileInBytes(logoFile.getInputStream().readAllBytes());
-                } catch (IOException e) {
-                    log.debug(e.getMessage(), e);
-                    throw new InvalidInputDataException(String.format("Can't save Company with NAME = %s. Broken logo file", company.getName()), e);
-                }
-                throw new InvalidInputDataException("Can't save company. Wrong type of logo file.");
-            }
-        }
     }
 
     @Transactional
@@ -83,5 +68,20 @@ public class CompanyService {
 
     private Boolean existsByName(String name) {
         return companyRepository.existsByName(name);
+    }
+
+    private void setLogoToCompany(CompanyEntity company, MultipartFile logoFile) {
+        if (logoFile != null) {
+            if (!logoFile.isEmpty() && logoFile.getContentType().contains("image")) {
+                try {
+                    company.getLogoFile().setFileInBytes(logoFile.getInputStream().readAllBytes());
+                } catch (IOException e) {
+                    log.debug(e.getMessage(), e);
+                    throw new InvalidInputDataException(String.format("Can't save Company with NAME = %s. Broken logo file", company.getName()), e);
+                }
+            } else {
+                throw new InvalidInputDataException("Can't save company. Wrong type of logo file.");
+            }
+        }
     }
 }

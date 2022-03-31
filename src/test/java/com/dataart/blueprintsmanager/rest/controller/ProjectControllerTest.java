@@ -62,12 +62,12 @@ public class ProjectControllerTest extends BlueprintsManagerTest {
     }
 
     @Test
-    void givenValidProjectDataForUpdate_whenUpdate_then201AndUpdatedProjectReceived() {
+    void givenValidProjectDataForUpdate_whenUpdate_then201AndUpdatedProjectReceived() throws InterruptedException {
         //Given
         String editorAccessToken = getEditorTokens().getAccessToken();
         ProjectDto validProjectData = getValidProjectData();
-        ResponseEntity<ProjectDto> resposeWithCreatedProject = createProject(validProjectData, editorAccessToken, ProjectDto.class);
-        ProjectDto projectDataForUpdate = resposeWithCreatedProject.getBody();
+        ResponseEntity<ProjectDto> responseWithCreatedProject = createProject(validProjectData, editorAccessToken, ProjectDto.class);
+        ProjectDto projectDataForUpdate = responseWithCreatedProject.getBody();
         projectDataForUpdate.setObjectAddress("Новый адрес");
         //When
         ResponseEntity<ProjectDto> response = updateProject(projectDataForUpdate, editorAccessToken, ProjectDto.class);

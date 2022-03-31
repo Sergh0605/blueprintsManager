@@ -151,7 +151,7 @@ class UserControllerTest extends BlueprintsManagerTest {
         //Then
         assertEquals(HttpStatus.OK, response.getStatusCode(), "Wrong code");
         assertNotNull(response.getBody(), "Empty body");
-        assertEquals(createdUser.getLogin(), response.getBody().getLogin(), "Login mismatch");
+        assertEquals(userDto.getLogin(), response.getBody().getLogin(), "Login mismatch");
         assertEquals(userDto.getEmail(), response.getBody().getEmail(), "Email mismatch");
         assertEquals(userDto.getLastName(), response.getBody().getLastName(), "LastName mismatch");
         assertEquals(createdUser.getCompany().getId(), response.getBody().getCompany().getId(), "Company mismatch");

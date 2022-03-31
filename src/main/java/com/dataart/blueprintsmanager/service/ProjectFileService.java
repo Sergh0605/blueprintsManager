@@ -18,7 +18,7 @@ import static com.dataart.blueprintsmanager.util.ResponseUtil.getFile;
 
 @Service
 @Slf4j
-
+@Transactional(readOnly = true)
 public class ProjectFileService {
     private final String pdfFileNameTemplate;
     private final ProjectFileRepository projectFileRepository;
@@ -29,19 +29,6 @@ public class ProjectFileService {
         this.projectFileRepository = projectFileRepository;
     }
 
-    private ProjectFileEntity getNewestByProjectId(Long projectId) {
-        return projectFileRepository.findFirstByProjectIdOrderByCreationTimeDesc(projectId).orElseThrow(() -> {
-            throw new NotFoundCustomApplicationException(String.format("PDF not found for Project with ID = %s", projectId));
-        });
-    }
-
-    private ProjectFileEntity getByIdAndProjectId(Long projectInPdfId, Long projectId) {
-        return projectFileRepository.findByIdAndProjectId(projectInPdfId, projectId).orElseThrow(() -> {
-            throw new NotFoundCustomApplicationException(String.format("PDF with ID = %d not found for Project with ID = %s", projectInPdfId, projectId));
-        });
-    }
-
-    @Transactional(readOnly = true)
     public Page<ProjectFileEntity> getPdfHistoryForProject(Long projectId, Pageable pageable) {
         return projectFileRepository.findAllByProjectIdOrderByCreationTimeDesc(projectId, pageable);
     }
@@ -55,13 +42,11 @@ public class ProjectFileService {
         return projectFileRepository.save(newProjectFile);
     }
 
-    @Transactional(readOnly = true)
     public void getProjectFileForDownload(Long projectId, Long projectInPdfId, HttpServletResponse response) {
         ProjectFileEntity projectFile = getByIdAndProjectId(projectInPdfId, projectId);
         getFileInPdf(projectFile, response);
     }
 
-    @Transactional(readOnly = true)
     public void getMostRecentProjectFileForDownload(Long projectId, HttpServletResponse response) {
         ProjectFileEntity projectFile = getNewestByProjectId(projectId);
         getFileInPdf(projectFile, response);
@@ -73,5 +58,17 @@ public class ProjectFileService {
                 projectFile.getProject().getVolumeNumber(),
                 projectFile.getProject().getVolumeName());
         getFile(response, documentInPdf, projectFileName);
+    }
+
+    private ProjectFileEntity getNewestByProjectId(Long projectId) {
+        return projectFileRepository.findFirstByProjectIdOrderByCreationTimeDesc(projectId).orElseThrow(() -> {
+            throw new NotFoundCustomApplicationException(String.format("PDF not found for Project with ID = %s", projectId));
+        });
+    }
+
+    private ProjectFileEntity getByIdAndProjectId(Long projectInPdfId, Long projectId) {
+        return projectFileRepository.findByIdAndProjectId(projectInPdfId, projectId).orElseThrow(() -> {
+            throw new NotFoundCustomApplicationException(String.format("PDF with ID = %d not found for Project with ID = %s", projectInPdfId, projectId));
+        });
     }
 }
