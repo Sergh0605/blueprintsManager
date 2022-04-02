@@ -3,11 +3,9 @@ package com.dataart.blueprintsmanager.rest.controller;
 import com.dataart.blueprintsmanager.BlueprintsManagerApplication;
 import com.dataart.blueprintsmanager.rest.dto.*;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -16,7 +14,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = BlueprintsManagerApplication.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 class UserControllerTest extends BlueprintsManagerTest {
 

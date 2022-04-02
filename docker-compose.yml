@@ -14,12 +14,13 @@ services:
       - BLUEPRINTS_MANAGER_APP_URL=http://localhost:8090
       - BLUEPRINTS_MANAGER_EMAIL_HOST=smtp.gmail.com
       - BLUEPRINTS_MANAGER_EMAIL_PORT=587
-      - JWT_EXP_LENGTH=5
+      - JWT_EXP_LENGTH=20
     ports:
       - "8090:8085"
     volumes:
       - "./docker-volumes/bpm/log:/opt/app/log"
     env_file: ./bpm-credentials.env
+    restart: unless-stopped
 
   db:
     image: 'postgres:latest'
@@ -31,3 +32,4 @@ services:
     volumes:
       - "./docker-volumes/db/data:/var/lib/postgresql/data"
     env_file: ./bpm-credentials.env
+    restart: unless-stopped

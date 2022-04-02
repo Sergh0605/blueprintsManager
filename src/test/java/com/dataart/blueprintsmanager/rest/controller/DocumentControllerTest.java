@@ -4,10 +4,8 @@ import com.dataart.blueprintsmanager.BlueprintsManagerApplication;
 import com.dataart.blueprintsmanager.persistence.entity.DocumentEntity;
 import com.dataart.blueprintsmanager.rest.dto.ProjectDto;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.HashSet;
 import java.util.List;
@@ -17,7 +15,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = BlueprintsManagerApplication.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class DocumentControllerTest extends BlueprintsManagerTest {
 

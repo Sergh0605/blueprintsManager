@@ -76,7 +76,7 @@ public class PdfDocumentGenerator {
             document.add(getFilledTableForContentsDocument(rowsOfDocument));
             document.close();
             return new PdfDocumentGenerator(os.toByteArray(), font);
-        } catch (java.io.IOException e) {
+        } catch (Exception e) {
             log.debug(e.getMessage(), e);
             throw new PdfCustomApplicationException("Can't read PDF Template", e);
         }
@@ -94,7 +94,7 @@ public class PdfDocumentGenerator {
             document.add(getFilledParagraphForTextDocument(text));
             document.close();
             return new PdfDocumentGenerator(os.toByteArray(), font);
-        } catch (java.io.IOException e) {
+        } catch (Exception e) {
             log.debug(e.getMessage(), e);
             throw new PdfCustomApplicationException("PDF document creation ERROR", e);
         }
@@ -112,7 +112,7 @@ public class PdfDocumentGenerator {
             firstPdfDocument.close();
             secondPdfDocument.close();
             return os.toByteArray();
-        } catch (java.io.IOException e) {
+        } catch (Exception e) {
             log.debug(e.getMessage());
             throw new PdfCustomApplicationException("Can't read PDF file");
         }

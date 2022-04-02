@@ -86,11 +86,15 @@ public class DocumentService {
         updateBasicFieldsWithExistenceCheck(document);
         DocumentType currentDocType = document.getDocumentType().getType();
         if (GENERAL_INFORMATION.equals(currentDocType)) {
+            projectRepository.setReassemblyRequiredById(document.getProject().getId(), true);
+            setReassemblyRequiredByProjectId(document.getProject().getId(), true);
             DocumentEntity createdDocument = createGeneralInfo(document, file);
             emailService.sendEmailOnDocumentCreate(createdDocument);
             return createdDocument;
         }
         if (DRAWING.equals(currentDocType)) {
+            projectRepository.setReassemblyRequiredById(document.getProject().getId(), true);
+            setReassemblyRequiredByProjectId(document.getProject().getId(), true);
             DocumentEntity createdDocument = createDrawing(document, file);
             emailService.sendEmailOnDocumentCreate(createdDocument);
             return createdDocument;
@@ -197,7 +201,8 @@ public class DocumentService {
             throw new InvalidInputDataException(String.format("Can't delete or restore Document with ID = %d. There is unmodified documentType.", documentId));
     }
 
-    public void setReassemblyRequiredByProjectId(Long projectId, boolean reassemblyRequired){
+    @Transactional
+    public void setReassemblyRequiredByProjectId(Long projectId, boolean reassemblyRequired) {
         List<DocumentEntity> documents = getAllByProjectId(projectId);
         documents.stream().peek(d -> d.setReassemblyRequired(reassemblyRequired)).forEach(documentRepository::save);
     }

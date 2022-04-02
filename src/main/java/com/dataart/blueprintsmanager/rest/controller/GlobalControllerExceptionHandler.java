@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +37,8 @@ public class GlobalControllerExceptionHandler {
             InvalidInputDataException.class,
             MethodArgumentTypeMismatchException.class,
             HttpMessageNotReadableException.class,
-            MaxUploadSizeExceededException.class})
+            MaxUploadSizeExceededException.class,
+            MultipartException.class})
     public ResponseEntity<?> handleInvalidInputException(HttpServletRequest request, Exception e) {
         log.error("Request: " + request.getRequestURL() + " raised " + e.getMessage());
         HttpStatus errorStatus = HttpStatus.BAD_REQUEST;

@@ -22,9 +22,9 @@ public class RoleService {
         });
     }
 
-    public RoleEntity getByName(Role admin) {
-        return roleRepository.findByName(admin).orElseThrow(() -> {
-            throw new NotFoundCustomApplicationException(String.format("Role with Name = %d not found", admin.name()));
+    public RoleEntity getByName(Role role) {
+        return roleRepository.findByName(role).orElseThrow(() -> {
+            throw new NotFoundCustomApplicationException(String.format("Role with Name = %d not found", role.name()));
         });
     }
 }

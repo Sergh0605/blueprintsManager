@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -198,7 +197,7 @@ public class ProjectService {
         return projectRepository.existsByCode(code);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.REPEATABLE_READ)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Integer getNextDocNumberByProjectId(Long projectId) {
         ProjectEntity project = getById(projectId);
         Integer documentNextNumber = project.getDocumentNextNumber();

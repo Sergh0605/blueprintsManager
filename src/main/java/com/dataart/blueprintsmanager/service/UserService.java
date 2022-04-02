@@ -79,7 +79,7 @@ public class UserService {
         if (user.getRoles() != null) {
             user.setRoles(user.getRoles().stream().map(r -> roleService.getById(r.getId())).collect(Collectors.toSet()));
         } else {
-            user.setRoles(Set.of(roleService.getById(3L)));
+            user.setRoles(Set.of(roleService.getByName(Role.VIEWER)));
         }
         return userRepository.save(user);
     }
