@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Slf4j
 @AllArgsConstructor
@@ -24,7 +26,11 @@ public class RoleService {
 
     public RoleEntity getByName(Role role) {
         return roleRepository.findByName(role).orElseThrow(() -> {
-            throw new NotFoundCustomApplicationException(String.format("Role with Name = %d not found", role.name()));
+            throw new NotFoundCustomApplicationException(String.format("Role with Name = %s not found", role.name()));
         });
+    }
+
+    public List<RoleEntity> getAll() {
+        return roleRepository.findAll();
     }
 }

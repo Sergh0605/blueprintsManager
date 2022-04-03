@@ -69,4 +69,5 @@ public class CompanyRestService {
         companyService.setDeletedById(companyId, false);
         log.info("Project with ID = {} restored.", companyId);
     }
+
 }

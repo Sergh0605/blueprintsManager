@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -54,7 +55,7 @@ public class UserService {
     }
 
     public List<UserEntity> getAllByCompanyId(Long companyId) {
-        return userRepository.findAllByCompanyIdOrderByLastName(companyId);
+        return userRepository.findAllByCompanyIdAndDeletedOrderByLastName(companyId, false);
     }
 
     public UserEntity getByLogin(String login) {

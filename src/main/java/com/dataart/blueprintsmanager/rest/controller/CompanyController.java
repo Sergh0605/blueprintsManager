@@ -2,6 +2,7 @@ package com.dataart.blueprintsmanager.rest.controller;
 
 import com.dataart.blueprintsmanager.rest.dto.CompanyDto;
 import com.dataart.blueprintsmanager.rest.service.CompanyRestService;
+import com.dataart.blueprintsmanager.rest.service.UserRestService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import javax.validation.Valid;
 @AllArgsConstructor
 public class CompanyController {
     private final CompanyRestService companyRestService;
+    private final UserRestService userRestService;
 
     @GetMapping
     public ResponseEntity<?> getCompaniesList() {
@@ -27,6 +29,11 @@ public class CompanyController {
     @GetMapping("/{companyId}")
     public ResponseEntity<?> getCompany(@PathVariable Long companyId) {
         return ResponseEntity.ok(companyRestService.getById(companyId));
+    }
+
+    @GetMapping("/{companyId}/users")
+    public ResponseEntity<?> getUsersByCompanyId(@PathVariable Long companyId) {
+        return ResponseEntity.ok(userRestService.getUsersByCompanyId(companyId));
     }
 
     @PutMapping("/{companyId}")

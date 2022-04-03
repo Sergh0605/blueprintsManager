@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
     Page<UserEntity> findAllByDeletedOrderByCompany(Boolean deleted, Pageable pageable);
 
-    List<UserEntity> findAllByCompanyIdOrderByLastName(Long companyId);
+    List<UserEntity> findAllByCompanyIdAndDeletedOrderByLastName(Long companyId, Boolean deleted);
 
     Optional<UserEntity> findByLogin(String login);
 

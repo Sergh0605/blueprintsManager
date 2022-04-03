@@ -89,4 +89,12 @@ public class UserRestService {
         log.info("Roles in User with ID = {} updated", userId);
         return updatedUserDto;
     }
+
+    public List<UserDto> getUsersByCompanyId(Long companyId) {
+        log.info("Try to get all active users of company with ID = {}", companyId);
+        List<UserEntity> usersOfCompany = userService.getAllByCompanyId(companyId);
+        List<UserDto> userDtos = usersOfCompany.stream().map(userMapper::userEntityToUserDto).toList();
+        log.info("{} Users found in company with ID = {}", userDtos.size(), companyId);
+        return userDtos;
+    }
 }

@@ -19,8 +19,8 @@ import java.util.List;
 public class DocumentTypeService {
     private final DocumentTypeRepository documentTypeRepository;
 
-    public List<DocumentType> getAll() {
-        return Arrays.stream(DocumentType.values()).toList();
+    public List<DocumentTypeEntity> getAllModified() {
+        return documentTypeRepository.findAllByUnmodified(false);
     }
 
     public DocumentTypeEntity getByType(DocumentType type) {
