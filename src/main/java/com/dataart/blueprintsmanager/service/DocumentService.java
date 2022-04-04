@@ -78,7 +78,7 @@ public class DocumentService {
         reassembleDocument(savedDocument);
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.MANDATORY)
     public DocumentEntity createEditableDocumentForSave(DocumentEntity document, MultipartFile file) {
         document.setId(null);
         document.setReassemblyRequired(true);
