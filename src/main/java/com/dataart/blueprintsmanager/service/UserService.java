@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -89,6 +88,9 @@ public class UserService {
     public UserEntity userAuthentication(UserEntity userToAuth) {
         try {
             UserEntity userEntity = getByLoginAndPassword(userToAuth);
+            if (userEntity.getDeleted()) {
+                throw new AuthenticationApplicationException("User locked.");
+            }
             tokenService.disableByUserId(userEntity.getId());
             userEntity.setAccessToken(tokenService.generateAccessToken(userEntity));
             userEntity.setRefreshToken(tokenService.generateRefreshToken(userEntity));
