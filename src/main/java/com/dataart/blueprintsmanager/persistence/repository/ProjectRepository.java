@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Optional;
 import java.util.Set;
 
 public interface ProjectRepository extends JpaRepository<ProjectEntity, Long> {
@@ -16,4 +17,5 @@ public interface ProjectRepository extends JpaRepository<ProjectEntity, Long> {
     @Modifying
     @Query("UPDATE ProjectEntity SET reassemblyRequired = ?2 WHERE id = ?1")
     void setReassemblyRequiredById(Long projectId, boolean reassemblyRequired);
+    Optional<ProjectEntity> findByIdAndDeleted(Long aLong, Boolean deleted);
 }

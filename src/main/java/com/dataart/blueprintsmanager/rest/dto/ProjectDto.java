@@ -1,5 +1,6 @@
 package com.dataart.blueprintsmanager.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +23,7 @@ public class ProjectDto {
     private String objectName;
     private String objectAddress;
     @NotNull
+    @JsonFormat(pattern="yyyy-MM-dd")
     private LocalDate releaseDate;
     @NotNull
     private Long volumeNumber;
@@ -41,6 +43,7 @@ public class ProjectDto {
     @Valid
     private BasicDto company;
     private Boolean reassemblyRequired;
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime editTime;
     @NotNull
     @Valid

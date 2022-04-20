@@ -1,5 +1,6 @@
 package com.dataart.blueprintsmanager.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class CommentDto {
     private BasicDto user;
     @NotEmpty
     private String text;
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime publicationDateTime;
     @Valid
     private BasicDto project;

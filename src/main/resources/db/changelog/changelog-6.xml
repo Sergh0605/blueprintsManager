@@ -149,6 +149,30 @@
             </column>
         </addColumn>
     </changeSet>
+
+    <changeSet id="DB_update_docTypeNames" author="S.Puzakov">
+        <update tableName="bpm_document_type">
+            <column name="name" value="Обложка"/>
+            <where>name='Cover Page'</where>
+        </update>
+        <update tableName="bpm_document_type">
+            <column name="name" value="Титульный лист"/>
+            <where>name='Title Page'</where>
+        </update>
+        <update tableName="bpm_document_type">
+            <column name="name" value="Состав проекта"/>
+            <where>name='Table Of Contents'</where>
+        </update>
+        <update tableName="bpm_document_type">
+            <column name="name" value="Пояснительная записка"/>
+            <where>name='General Information'</where>
+        </update>
+
+        <update tableName="bpm_document_type">
+            <column name="name" value="Чертеж"/>
+            <where>name='Drawing'</where>
+        </update>
+    </changeSet>
 </databaseChangeLog>
 
 

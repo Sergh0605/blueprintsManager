@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface DocumentRepository extends CrudRepository<DocumentEntity, Long> {
-    List<DocumentEntity> findByProjectIdOrderByNumberInProject(Long projectId);
+    List<DocumentEntity> findByProjectIdAndDeletedOrderByNumberInProject(Long projectId, Boolean deleted);
 
     Optional<DocumentEntity> findByIdAndProjectId(Long documentId, Long projectId);
 }
