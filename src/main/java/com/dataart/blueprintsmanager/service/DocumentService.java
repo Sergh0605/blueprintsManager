@@ -334,4 +334,9 @@ public class DocumentService {
                 .map(u -> userService.getById(u.getId()))
                 .orElse(null));
     }
+
+    @Transactional
+    public DocumentEntity reassembleDocumentForRestService(Long documentId, Long projectId) {
+        return reassembleDocument(getByIdAndProjectId(documentId, projectId));
+    }
 }

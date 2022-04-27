@@ -62,8 +62,8 @@ public class ProjectService {
         this.entityManager = entityManager;
     }
 
-    public Page<ProjectEntity> getAllNotDeletedPaginated(Pageable pageable) {
-        return projectRepository.findAllByDeletedOrderByEditTimeDesc(false, pageable);
+    public Page<ProjectEntity> getAllNotDeletedPaginated(Pageable pageable, String search) {
+        return projectRepository.findAllByNameContainingIgnoreCaseAndDeletedOrderByEditTimeDesc(search, false, pageable);
     }
 
     public ProjectEntity getById(Long projectId) {
@@ -113,7 +113,7 @@ public class ProjectService {
         currentProject.setObjectName(projectForUpdate.getObjectName());
         currentProject.setObjectAddress(projectForUpdate.getObjectAddress());
         currentProject.setReleaseDate(projectForUpdate.getReleaseDate());
-        currentProject.setVolumeName(projectForUpdate.getVolumeName());
+        currentProject.setVolumeNumber(projectForUpdate.getVolumeNumber());
         currentProject.setVolumeName(projectForUpdate.getVolumeName());
         currentProject.setCode(projectForUpdate.getCode());
         currentProject.setDesigner(projectForUpdate.getDesigner());

@@ -6,20 +6,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class CommentDto {
+public class ActivityDto {
     private Long id;
-    private BasicDto user;
-    @NotEmpty
-    private String text;
+    private String login;
+    private String action;
+    private String message;
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime publicationDateTime;
-    private BasicDto project;
-    private BasicDto document;
+    private LocalDateTime timestamp;
 }

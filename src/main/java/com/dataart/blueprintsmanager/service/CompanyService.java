@@ -21,8 +21,8 @@ import java.util.List;
 public class CompanyService {
     private final CompanyRepository companyRepository;
 
-    public List<CompanyEntity> getAllNotDeleted() {
-        return companyRepository.findAllByDeletedOrderByName(false);
+    public List<CompanyEntity> getAllNotDeleted(String search) {
+        return companyRepository.findAllByDeletedAndNameContainingIgnoreCaseOrderByName(false, search);
     }
 
     public CompanyEntity getById(Long companyId) {

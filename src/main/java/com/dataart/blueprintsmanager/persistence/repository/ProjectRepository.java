@@ -13,7 +13,7 @@ import java.util.Set;
 public interface ProjectRepository extends JpaRepository<ProjectEntity, Long> {
     Boolean existsByCode(String code);
     Set<ProjectEntity> findAllByReassemblyRequiredAndDeleted(Boolean reassemblyRequired, Boolean deleted);
-    Page<ProjectEntity> findAllByDeletedOrderByEditTimeDesc(Boolean deleted, Pageable pageable);
+    Page<ProjectEntity> findAllByNameContainingIgnoreCaseAndDeletedOrderByEditTimeDesc(String nameFilter, Boolean deleted, Pageable pageable);
     @Modifying
     @Query("UPDATE ProjectEntity SET reassemblyRequired = ?2 WHERE id = ?1")
     void setReassemblyRequiredById(Long projectId, boolean reassemblyRequired);

@@ -24,8 +24,9 @@ public class ProjectController {
     @GetMapping
     public ResponseEntity<?> indexPageable(
             @RequestParam(name = "page", defaultValue = "0") Integer page,
-            @RequestParam(name = "size", defaultValue = "5") Integer size) {
-        return ResponseEntity.ok(projectRestService.getAllNotDeletedPaginated(PageRequest.of(page, size)));
+            @RequestParam(name = "size", defaultValue = "5") Integer size,
+            @RequestParam(name = "search", defaultValue = "") String search) {
+        return ResponseEntity.ok(projectRestService.getAllNotDeletedPaginated(PageRequest.of(page, size), search));
     }
 
     @GetMapping("/{projectId}/assemble_history")

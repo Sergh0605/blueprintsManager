@@ -52,6 +52,7 @@ public class TokenService {
         String token = Jwts.builder()
                 .setSubject(String.valueOf(user.getLogin()))
                 .claim("UserRoles", user.getRoles().stream().map(RoleEntity::getName).collect(Collectors.toSet()))
+                .claim("userId", user.getId())
                 .setAudience(TokenType.ACCESS.name())
                 .setExpiration(date)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)

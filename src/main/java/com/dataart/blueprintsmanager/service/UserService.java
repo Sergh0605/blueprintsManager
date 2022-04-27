@@ -20,6 +20,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,8 +38,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
 
-    public Page<UserEntity> getAllNotDeletedPaginated(Pageable pageable) {
-        return userRepository.findAllByDeletedOrderByCompany(false, pageable);
+    public Page<UserEntity> getAllNotDeletedPaginated(Pageable pageable, String search) {
+        return userRepository.findAllByLoginContainingIgnoreCaseAndDeletedOrderByCompany(search, false, pageable);
     }
 
     public UserEntity getById(Long userId) {
@@ -154,9 +155,9 @@ public class UserService {
     }
 
     @Transactional
-    public UserEntity updateRolesByUserId(Set<RoleEntity> rolesForUpdate, Long userId) {
+    public UserEntity updateRolesByUserId(RoleEntity[] rolesForUpdate, Long userId) {
         UserEntity userForUpdate = getById(userId);
-        userForUpdate.setRoles(rolesForUpdate.stream().map(r -> roleService.getById(r.getId())).collect(Collectors.toSet()));
+        userForUpdate.setRoles(Arrays.stream(rolesForUpdate).map(r -> roleService.getById(r.getId())).collect(Collectors.toSet()));
         return userRepository.save(userForUpdate);
     }
 

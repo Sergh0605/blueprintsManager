@@ -27,6 +27,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/api/user/register", "/api/user/auth", "/api/user/refresh_token_auth").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/**").authenticated()
+                .antMatchers(HttpMethod.OPTIONS, "/api/**").authenticated()
                 .antMatchers(HttpMethod.POST, "/api/user/logout").authenticated()
                 .antMatchers(HttpMethod.PUT, "/api/user/*").authenticated()
                 .antMatchers(HttpMethod.POST, "/api/project/**").hasAuthority(Role.EDITOR.name())

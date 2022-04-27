@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Set;
 
 @Service
 @Slf4j
@@ -27,9 +26,9 @@ public class UserRestService {
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
 
-    public Page<UserDto> getAllNotDeletedPaginated(Pageable pageable) {
+    public Page<UserDto> getAllNotDeletedPaginated(Pageable pageable, String search) {
         log.info("Try to get {} page with {} users", pageable.getPageNumber(), pageable.getPageSize());
-        Page<UserEntity> userEntityPage = userService.getAllNotDeletedPaginated(pageable);
+        Page<UserEntity> userEntityPage = userService.getAllNotDeletedPaginated(pageable, search);
         List<UserDto> userDtoList = userEntityPage.getContent().stream().map(userMapper::userEntityToUserDto).toList();
         Page<UserDto> userDtoPage = new PageImpl<>(userDtoList, pageable, userEntityPage.getTotalElements());
         log.info("Page {} with {} user found", userDtoPage.getNumber(), userDtoPage.getNumberOfElements());
@@ -82,9 +81,9 @@ public class UserRestService {
     }
 
     @UserActivityTracker(action = UserAction.UPDATE_ROLES, userId = "#userId.toString")
-    public UserDto updateRoles(@ParamName("userId") Long userId, Set<RoleDto> roles) {
+    public UserDto updateRoles(@ParamName("userId") Long userId, RolesDto roles) {
         log.info("Try to update roles for user with ID = {}", userId);
-        UserEntity updatedUser = userService.updateRolesByUserId(roleMapper.roleDtoSetToRoleEntity(roles), userId);
+        UserEntity updatedUser = userService.updateRolesByUserId(roleMapper.roleDtoArrToRoleEntity(roles.getRoles()), userId);
         UserDto updatedUserDto = userMapper.userEntityToUserDto(updatedUser);
         log.info("Roles in User with ID = {} updated", userId);
         return updatedUserDto;
@@ -96,5 +95,13 @@ public class UserRestService {
         List<UserDto> userDtos = usersOfCompany.stream().map(userMapper::userEntityToUserDto).toList();
         log.info("{} Users found in company with ID = {}", userDtos.size(), companyId);
         return userDtos;
+    }
+
+    public UserDto getById(Long userId) {
+        log.info("Try to get user with ID = {}", userId);
+        UserEntity user = userService.getById(userId);
+        UserDto userDto = userMapper.userEntityToUserDto(user);
+        log.info("User with ID = {} found", userId);
+        return userDto;
     }
 }

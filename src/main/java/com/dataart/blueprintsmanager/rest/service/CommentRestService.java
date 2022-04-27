@@ -61,8 +61,8 @@ public class CommentRestService {
     @UserActivityTracker(action = UserAction.CREATE_COMMENT, projectId = "#projectId.toString()")
     public CommentDto createNewCommentForDocument(@ParamName("projectId") Long projectId, Long documentId, CommentDto commentDto) {
         log.info("Try to create new Comment for Document with ID = {} in Project with ID = {}", documentId, projectId);
-        commentDto.setProject(new BasicDto(projectId, ""));
-        commentDto.setDocument(new BasicDto(documentId, ""));
+        commentDto.setProject(new BasicDto(projectId));
+        commentDto.setDocument(new BasicDto(documentId));
         CommentEntity createdComment = commentService.createNewComment(commentMapper.commentDtoToCommentEntity(commentDto));
         CommentDto createdCommentDto = commentMapper.commentEntityToCommentDto(createdComment);
         log.info("Comment for Project with ID = {} created with ID = {}", createdCommentDto.getProject().getId(), createdCommentDto.getId());

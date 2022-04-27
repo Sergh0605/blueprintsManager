@@ -51,7 +51,7 @@ public class DocumentRestService {
     @UserActivityTracker(action = UserAction.REASSEMBLY_DOCUMENT, documentId = "#documentId.toString()")
     public DocumentDto assemble(Long projectId, @ParamName("documentId") Long documentId) {
         log.info("Try to assemble Document with ID = {} in Project with ID = {}", documentId, projectId);
-        DocumentEntity reassembledDocument = documentService.reassembleDocument(documentService.getByIdAndProjectId(documentId, projectId));
+        DocumentEntity reassembledDocument = documentService.reassembleDocumentForRestService(documentId, projectId);
         DocumentDto reassembledDocumentDto = documentMapper.documentEntityToDocumentDto(reassembledDocument);
         log.info("Document with ID = {} reassembled", projectId);
         return reassembledDocumentDto;

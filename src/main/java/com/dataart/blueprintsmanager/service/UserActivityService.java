@@ -16,8 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserActivityService {
     private final UserActivityRepository userActivityRepository;
 
-    public Page<UserActivityEntity> getAllPaginated(Pageable pageable) {
-        return userActivityRepository.findAll(pageable);
+    public Page<UserActivityEntity> getAllFilteredPaginated(String filter, Pageable pageable) {
+        return userActivityRepository.findAllByLoginContainingIgnoreCaseOrMessageContainingIgnoreCaseOrderByTimestampDesc(filter, filter, pageable);
     }
 
     @Transactional

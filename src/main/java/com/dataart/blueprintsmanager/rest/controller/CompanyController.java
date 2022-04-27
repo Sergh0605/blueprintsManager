@@ -22,8 +22,9 @@ public class CompanyController {
     private final UserRestService userRestService;
 
     @GetMapping
-    public ResponseEntity<?> getCompaniesList() {
-        return ResponseEntity.ok(companyRestService.getAll());
+    public ResponseEntity<?> getCompaniesList(
+            @RequestParam(name = "search", defaultValue = "") String search) {
+        return ResponseEntity.ok(companyRestService.getAll(search));
     }
 
     @GetMapping("/{companyId}")
@@ -38,15 +39,15 @@ public class CompanyController {
 
     @PutMapping("/{companyId}")
     public ResponseEntity<?> updateCompany(@PathVariable Long companyId,
-                                           @RequestPart @Valid CompanyDto companyDto,
+                                           @RequestPart @Valid CompanyDto company,
                                            @RequestPart(value = "file", required = false) MultipartFile file) {
-        return ResponseEntity.ok(companyRestService.update(companyId, companyDto, file));
+        return ResponseEntity.ok(companyRestService.update(companyId, company, file));
     }
 
     @PostMapping
-    public ResponseEntity<?> createCompany(@RequestPart @Valid CompanyDto companyDto,
+    public ResponseEntity<?> createCompany(@RequestPart @Valid CompanyDto company,
                                            @RequestPart(value = "file", required = false) MultipartFile file) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(companyRestService.createCompany(companyDto, file));
+        return ResponseEntity.status(HttpStatus.CREATED).body(companyRestService.createCompany(company, file));
     }
 
     @PostMapping(value = {"/{companyId}/disable"})

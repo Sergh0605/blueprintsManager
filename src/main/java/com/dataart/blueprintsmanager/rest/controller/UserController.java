@@ -1,6 +1,6 @@
 package com.dataart.blueprintsmanager.rest.controller;
 
-import com.dataart.blueprintsmanager.rest.dto.RoleDto;
+import com.dataart.blueprintsmanager.rest.dto.RolesDto;
 import com.dataart.blueprintsmanager.rest.dto.UserDto;
 import com.dataart.blueprintsmanager.rest.dto.UserRegistrationDto;
 import com.dataart.blueprintsmanager.rest.service.UserRestService;
@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/api/user")
@@ -25,8 +24,15 @@ public class UserController {
     @GetMapping
     public ResponseEntity<?> getAllPageable(
             @RequestParam(name = "page", defaultValue = "0") Integer page,
-            @RequestParam(name = "size", defaultValue = "5") Integer size) {
-        return ResponseEntity.ok(userRestService.getAllNotDeletedPaginated(PageRequest.of(page, size)));
+            @RequestParam(name = "size", defaultValue = "5") Integer size,
+            @RequestParam(name = "search", defaultValue = "") String search) {
+        return ResponseEntity.ok(userRestService.getAllNotDeletedPaginated(PageRequest.of(page, size), search));
+    }
+
+    @GetMapping(value = "/{userId}")
+    public ResponseEntity<?> getById(
+            @PathVariable Long userId) {
+        return ResponseEntity.ok(userRestService.getById(userId));
     }
 
     @PostMapping
@@ -44,7 +50,7 @@ public class UserController {
 
     @PutMapping(value = {"/{userId}/edit_roles"})
     public ResponseEntity<?> updateRoles(@PathVariable Long userId,
-                                          @RequestBody @Valid Set<RoleDto> roles) {
+                                         @RequestBody @Valid RolesDto roles) {
         return ResponseEntity.ok(userRestService.updateRoles(userId, roles));
     }
 }

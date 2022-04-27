@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface CompanyRepository extends JpaRepository<CompanyEntity, Long> {
-    List<CompanyEntity> findAllByDeletedOrderByName(Boolean deleted);
+    List<CompanyEntity> findAllByDeletedAndNameContainingIgnoreCaseOrderByName(Boolean deleted, String nameFilter);
 
     Boolean existsByName(String name);
 }

@@ -21,9 +21,9 @@ public class CompanyRestService {
     private final CompanyService companyService;
     private final CompanyMapper companyMapper;
 
-    public List<CompanyDto> getAll() {
+    public List<CompanyDto> getAll(String search) {
         log.info("Try to find all companies");
-        List<CompanyEntity> companyEntities = companyService.getAllNotDeleted();
+        List<CompanyEntity> companyEntities = companyService.getAllNotDeleted(search);
         List<CompanyDto> companyDtos = companyEntities.stream().map(companyMapper::companyEntityToCompanyDto).toList();
         log.info("{} companies found", companyDtos.size());
         return companyDtos;

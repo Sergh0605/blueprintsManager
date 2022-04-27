@@ -28,9 +28,9 @@ public class ProjectRestService {
     private final ProjectMapper projectMapper;
     private final ProjectFileService projectFileService;
 
-    public Page<ProjectDto> getAllNotDeletedPaginated(Pageable pageable) {
+    public Page<ProjectDto> getAllNotDeletedPaginated(Pageable pageable, String search) {
         log.info("Try to get {} page with {} projects", pageable.getPageNumber(), pageable.getPageSize());
-        Page<ProjectEntity> projectEntityPage = projectService.getAllNotDeletedPaginated(pageable);
+        Page<ProjectEntity> projectEntityPage = projectService.getAllNotDeletedPaginated(pageable, search);
         List<ProjectDto> projectDtoList = projectEntityPage.getContent().stream().map(projectMapper::projectEntityToProjectDto).toList();
         Page<ProjectDto> projectDtoPage = new PageImpl<>(projectDtoList, pageable, projectEntityPage.getTotalElements());
         log.info("Page {} with {} projects found", projectDtoPage.getNumber(), projectDtoPage.getNumberOfElements());

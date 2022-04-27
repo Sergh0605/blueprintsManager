@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
-    Page<UserEntity> findAllByDeletedOrderByCompany(Boolean deleted, Pageable pageable);
+    Page<UserEntity> findAllByLoginContainingIgnoreCaseAndDeletedOrderByCompany(String filterLogin, Boolean deleted, Pageable pageable);
 
     List<UserEntity> findAllByCompanyIdAndDeletedOrderByLastName(Long companyId, Boolean deleted);
 
