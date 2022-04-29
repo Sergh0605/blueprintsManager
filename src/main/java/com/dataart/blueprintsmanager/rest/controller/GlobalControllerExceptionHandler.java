@@ -34,10 +34,8 @@ public class GlobalControllerExceptionHandler {
             MissingServletRequestParameterException.class,
             MissingServletRequestPartException.class,
             HttpRequestMethodNotSupportedException.class,
-            InvalidInputDataException.class,
             MethodArgumentTypeMismatchException.class,
             HttpMessageNotReadableException.class,
-            MaxUploadSizeExceededException.class,
             MultipartException.class})
     public ResponseEntity<?> handleInvalidInputException(HttpServletRequest request, Exception e) {
         log.error("Request: " + request.getRequestURL() + " raised " + e.getMessage());
@@ -65,10 +63,24 @@ public class GlobalControllerExceptionHandler {
         return ResponseEntity.status(errorStatus).body(exceptionDto);
     }
 
+    @ExceptionHandler({InvalidInputDataException.class,
+            MaxUploadSizeExceededException.class})
+    public ResponseEntity<?> handleOtherInputException(HttpServletRequest request, Exception e) {
+        log.error("Request: " + request.getRequestURL() + " raised " + e.getMessage());
+        HttpStatus errorStatus = HttpStatus.UNPROCESSABLE_ENTITY;
+        ExceptionDto exceptionDto = ExceptionDto.builder()
+                .timestamp(LocalDateTime.now())
+                .status(errorStatus.value())
+                .error(e.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        return ResponseEntity.status(errorStatus).body(exceptionDto);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleMethodArgumentNotValidException(HttpServletRequest request, MethodArgumentNotValidException e) {
         log.error("Request: " + request.getRequestURL() + " raised " + e.getMessage());
-        HttpStatus errorStatus = HttpStatus.BAD_REQUEST;
+        HttpStatus errorStatus = HttpStatus.UNPROCESSABLE_ENTITY;
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(fieldError ->
                         String.format("field [%s] is not valid: %s", fieldError.getField(), fieldError.getDefaultMessage()))

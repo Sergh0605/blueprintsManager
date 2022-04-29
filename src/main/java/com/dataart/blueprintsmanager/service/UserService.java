@@ -90,7 +90,7 @@ public class UserService {
         try {
             UserEntity userEntity = getByLoginAndPassword(userToAuth);
             if (userEntity.getDeleted()) {
-                throw new AuthenticationApplicationException("User locked.");
+                throw new NotFoundCustomApplicationException("User locked.");
             }
             tokenService.disableByUserId(userEntity.getId());
             userEntity.setAccessToken(tokenService.generateAccessToken(userEntity));

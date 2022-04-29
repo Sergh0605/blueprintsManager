@@ -11,16 +11,19 @@ services:
     environment:
       - BLUEPRINTS_MANAGER_DB_URL=jdbc:postgresql://db:5432/bp_manager
       - BLUEPRINTS_MANAGER_PORT=8085
-      - BLUEPRINTS_MANAGER_APP_URL=http://localhost:8090
+      - BLUEPRINTS_MANAGER_APP_URL=http://spuzakov.vrn.dataart.net:3000
       - BLUEPRINTS_MANAGER_EMAIL_HOST=smtp.gmail.com
       - BLUEPRINTS_MANAGER_EMAIL_PORT=587
-      - JWT_EXP_LENGTH=1
+      - JWT_EXP_LENGTH=10
     ports:
       - "8090:8085"
     volumes:
       - "./docker-volumes/bpm/log:/opt/app/log"
     env_file: ./bpm-credentials.env
     restart: unless-stopped
+    networks:
+      - frontend
+      - backend
 
   db:
     image: 'postgres:latest'
@@ -33,3 +36,13 @@ services:
       - "./docker-volumes/db/data:/var/lib/postgresql/data"
     env_file: ./bpm-credentials.env
     restart: unless-stopped
+    networks:
+      - backend
+
+networks:
+  backend:
+    external:
+      name: bpm-back
+  frontend:
+    external:
+      name: bpm-front

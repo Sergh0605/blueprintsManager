@@ -13,7 +13,7 @@
 <div>Document <b th:text="${document.getName()}"></b> in Project <b th:text="${document.getProject().getCode()}"></b> was <b th:text="${status}"></b> at <b th:text="${editTime}"></b></div>
 
 <div> To view Document please</div>
-<a th:href="@{${url} + '/document/view/' + ${document.getId()}}">
+<a th:href="@{${url} + '/project/' + ${document.getProject().getId()} + '/document/' + ${document.getId()}}">
     <button type="button">PRESS HERE</button>
 </a>
 </body>

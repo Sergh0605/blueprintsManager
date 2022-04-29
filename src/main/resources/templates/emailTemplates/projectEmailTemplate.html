@@ -13,7 +13,7 @@
 <div>Project <b th:text="${project.getCode()}"></b> was <b th:text="${status}"></b> at <b th:text="${editTime}"></b></div>
 
 <div> To view Project please</div>
-<a th:href="@{${url} + '/project/view/' + ${project.getId()}}">
+<a th:href="@{${url} + '/project/' + ${project.getId()}}">
     <button type="button">PRESS HERE</button>
 </a>
 </body>

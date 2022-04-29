@@ -197,6 +197,7 @@ public class DocumentService {
         if (!documentForDelete.getDocumentType().getUnmodified()) {
             documentForDelete.setDeleted(deleted);
             documentRepository.save(documentForDelete);
+            setReassemblyRequiredByProjectId(projectId, true);
             projectRepository.setReassemblyRequiredById(projectId, true);
         } else
             throw new InvalidInputDataException(String.format("Can't delete or restore Document with ID = %d. There is unmodified documentType.", documentId));
