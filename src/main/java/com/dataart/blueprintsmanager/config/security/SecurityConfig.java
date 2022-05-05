@@ -29,6 +29,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.GET, "/api/**").authenticated()
                 .antMatchers(HttpMethod.OPTIONS, "/api/**").authenticated()
                 .antMatchers(HttpMethod.POST, "/api/user/logout").authenticated()
+                .antMatchers(HttpMethod.POST, "/api/project/*/comment").authenticated()
+                .antMatchers(HttpMethod.POST, "/api/project/*/document/*/comment").authenticated()
                 .antMatchers(HttpMethod.PUT, "/api/user/*").authenticated()
                 .antMatchers(HttpMethod.POST, "/api/project/**").hasAuthority(Role.EDITOR.name())
                 .antMatchers(HttpMethod.PUT, "/api/project/**").hasAuthority(Role.EDITOR.name())

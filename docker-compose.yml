@@ -14,7 +14,7 @@ services:
       - BLUEPRINTS_MANAGER_APP_URL=http://spuzakov.vrn.dataart.net:3000
       - BLUEPRINTS_MANAGER_EMAIL_HOST=smtp.gmail.com
       - BLUEPRINTS_MANAGER_EMAIL_PORT=587
-      - JWT_EXP_LENGTH=10
+      - JWT_EXP_LENGTH=60
     ports:
       - "8090:8085"
     volumes:
